@@ -1,0 +1,51 @@
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+.dashboard-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.8;
+}
+
+.qr-gradient {
+  background: linear-gradient(135deg, #4361eb 0%, #764ba2 100%);
+}
+
+.schedule-gradient {
+  background: linear-gradient(135deg, #f1c01c 0%, #da7356 100%);
+}
+
+.planning-gradient {
+  background: linear-gradient(135deg, #5386d8 0%, #5eb7e0 100%);
+}
+
+.pdf-gradient {
+  background: linear-gradient(135deg, #3cd1db 0%, #66a6ff 100%);
+}
+
+.card-icon {
+  font-size: 48px;
+  color: white;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+ion-card-title,
+ion-card-subtitle {
+  color: white;
+}

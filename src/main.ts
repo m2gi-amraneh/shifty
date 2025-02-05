@@ -1,12 +1,48 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { RouteReuseStrategy, provideRouter, withPreloading, PreloadAllModules } from '@angular/router';
-import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalone';
+import {
+  RouteReuseStrategy,
+  provideRouter,
+  withPreloading,
+  PreloadAllModules,
+} from '@angular/router';
+import {
+  IonicRouteStrategy,
+  provideIonicAngular,
+} from '@ionic/angular/standalone';
 
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
+import { enableProdMode } from '@angular/core';
+import { environment } from './environments/environment';
 
+// Firebase imports
+import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
+import { provideAuth, getAuth } from '@angular/fire/auth';
+import { provideFirestore, getFirestore } from '@angular/fire/firestore'; // Import Firestore modules
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: 'AIzaSyBtumbfL-GL7BeUfivtBgzInkSg5j3jnfc',
+  authDomain: 'topic-app-4b583.firebaseapp.com',
+  projectId: 'topic-app-4b583',
+  storageBucket: 'topic-app-4b583.appspot.com',
+  messagingSenderId: '385822540976',
+  appId: '1:385822540976:web:01e3877e074fca89b6e775',
+  measurementId: 'G-GJC296CELK',
+};
+
+if (environment.production) {
+  enableProdMode();
+}
+
+// Bootstrap the application and initialize Firebase
 bootstrapApplication(AppComponent, {
   providers: [
+    // Initialize Firebase (ensure it's done before accessing Firebase services)
+    provideFirebaseApp(() => initializeApp(firebaseConfig)),
+    provideAuth(() => getAuth()),
+    provideFirestore(() => getFirestore()), // Provide Firestore service
+    // Provide Firebase Auth service
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideIonicAngular(),
     provideRouter(routes, withPreloading(PreloadAllModules)),

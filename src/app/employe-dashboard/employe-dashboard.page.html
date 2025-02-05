@@ -1,0 +1,45 @@
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Employee Dashboard</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="dashboard-grid">
+    <ion-card class="dashboard-card" button routerLink="/Badge">
+      <div class="card-gradient qr-gradient"></div>
+      <ion-icon name="qr-code-outline" class="card-icon"></ion-icon>
+      <ion-card-header>
+        <ion-card-title>QR Scanner</ion-card-title>
+        <ion-card-subtitle>Badge In/Out</ion-card-subtitle>
+      </ion-card-header>
+    </ion-card>
+
+    <ion-card class="dashboard-card" button routerLink="/employee-shifts">
+      <div class="card-gradient schedule-gradient"></div>
+      <ion-icon name="calendar-number-outline" class="card-icon"></ion-icon>
+      <ion-card-header>
+        <ion-card-title>Shifts</ion-card-title>
+        <ion-card-subtitle>View Your Shifts</ion-card-subtitle>
+      </ion-card-header>
+    </ion-card>
+
+    <ion-card class="dashboard-card" button routerLink="/employee-planning">
+      <div class="card-gradient planning-gradient"></div>
+      <ion-icon name="calendar-outline" class="card-icon"></ion-icon>
+      <ion-card-header>
+        <ion-card-title>Planning</ion-card-title>
+        <ion-card-subtitle>View Your Planning</ion-card-subtitle>
+      </ion-card-header>
+    </ion-card>
+
+    <ion-card class="dashboard-card" button routerLink="/work-hours-pdf">
+      <div class="card-gradient pdf-gradient"></div>
+      <ion-icon name="document-outline" class="card-icon"></ion-icon>
+      <ion-card-header>
+        <ion-card-title>Work Hours</ion-card-title>
+        <ion-card-subtitle>Get PDF </ion-card-subtitle>
+      </ion-card-header>
+    </ion-card>
+  </div>
+</ion-content>

@@ -1,0 +1,103 @@
+/* Add to manage-employees.page.scss */
+.header-toolbar {
+  --background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  --color: white;
+}
+
+.search-toolbar {
+  --background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.main-content {
+  --background: #0f0f1f;
+}
+
+.employee-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.employee-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-height: 250px;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 180, 216, 0.2);
+  }
+}
+
+.card-gradient {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  background: linear-gradient(45deg, #00b4d8, #7b2cbf);
+  filter: blur(50px);
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+
+.profile-icon {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 3rem;
+  color: rgba(255, 255, 255, 0.9);
+  opacity: 0.8;
+}
+
+.employee-name {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.employee-grade {
+  color: #90e0ef;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.actions-content {
+  padding-top: 1rem;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.action-btn {
+  --border-color: rgba(255, 255, 255, 0.2);
+  --color: rgba(255, 255, 255, 0.9);
+  --border-radius: 8px;
+  flex: 1;
+
+  &:hover {
+    --background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.delete-btn {
+  --color: #e94560;
+  --border-color: rgba(233, 69, 96, 0.3);
+  min-width: 44px;
+
+  &:hover {
+    --background: rgba(233, 69, 96, 0.1);
+  }
+}
+
+.add-btn {
+  --background: linear-gradient(45deg, #00b4d8, #7b2cbf);
+  --box-shadow: 0 4px 15px rgba(0, 180, 216, 0.3);
+}

@@ -1,0 +1,68 @@
+<ion-header>
+  <ion-toolbar class="header-toolbar">
+    <ion-title class="header-title">Team Management</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" class="search-btn">
+        <ion-icon name="search-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar class="search-toolbar">
+    <ion-searchbar
+      placeholder="Search employees..."
+      (ionInput)="filterEmployees($any($event))"
+    ></ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding main-content">
+  <div class="employee-grid">
+    <ion-card class="employee-card" *ngFor="let employee of filteredEmployees">
+      <div class="card-gradient"></div>
+      <ion-icon name="person-circle-outline" class="profile-icon"></ion-icon>
+
+      <ion-card-header>
+        <ion-card-title class="employee-name"
+          >{{ employee.name }}</ion-card-title
+        >
+        <ion-card-subtitle class="employee-grade"
+          >{{ employee.grade }}</ion-card-subtitle
+        >
+      </ion-card-header>
+
+      <ion-card-content class="actions-content">
+        <div class="button-group">
+          <ion-button
+            fill="outline"
+            class="action-btn"
+            (click)="viewPlanning(employee)"
+          >
+            <ion-icon name="calendar-outline" slot="start"></ion-icon>
+            Planning
+          </ion-button>
+          <ion-button
+            fill="outline"
+            class="action-btn"
+            (click)="viewBadging(employee)"
+          >
+            <ion-icon name="id-card-outline" slot="start"></ion-icon>
+            Badging
+          </ion-button>
+          <ion-button
+            fill="outline"
+            class="delete-btn"
+            (click)="deleteEmployee(employee)"
+          >
+            <ion-icon name="trash-outline" slot="start"></ion-icon>
+          </ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <ion-fab slot="fixed" vertical="bottom" horizontal="end">
+    <ion-fab-button class="add-btn" (click)="addEmployee()">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
