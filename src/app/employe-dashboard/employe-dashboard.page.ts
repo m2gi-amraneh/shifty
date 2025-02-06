@@ -10,6 +10,21 @@ import {
   IonCard,
   IonicModule,
 } from '@ionic/angular';
+import {
+  calendarNumberOutline,
+  calendarOutline,
+  documentOutline,
+  peopleOutline,
+  qrCodeOutline,
+} from 'ionicons/icons';
+import { addIcons } from 'ionicons';
+addIcons({
+  qrCodeOutline,
+  peopleOutline,
+  calendarNumberOutline,
+  documentOutline,
+  calendarOutline,
+});
 
 @Component({
   selector: 'app-employe-dashboard',

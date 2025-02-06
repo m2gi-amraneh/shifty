@@ -1,0 +1,105 @@
+/* planning.page.scss */
+ion-segment {
+  margin-bottom: 16px;
+}
+
+ion-segment-button {
+  --color-checked: var(--ion-color-primary);
+  min-width: 60px;
+}
+
+swiper-container {
+  height: calc(100% - 56px);
+}
+
+.day-container {
+  padding: 16px;
+  height: 100%;
+}
+
+ion-list {
+  background: transparent;
+}
+
+ion-item {
+  --background: var(--ion-color-light);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+ion-chip {
+  margin: 2px;
+  font-size: 0.8em;
+}
+
+ion-fab {
+  margin-bottom: 16px;
+}
+/* 🌟 Modal Background and Layout */
+ion-modal {
+  --background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* 🟢 Modal Header */
+ion-header {
+  --background: #007aff;
+  --color: white;
+  border-radius: 15px 15px 0 0;
+}
+
+/* 📝 Form Styling */
+ion-item {
+  --background: transparent;
+  --highlighted-background: #f7f7f7;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+ion-label {
+  font-weight: bold;
+  color: #333;
+}
+
+/* 🎨 Ion-select & Ion-datetime */
+ion-select, ion-datetime {
+  --background: rgba(255, 255, 255, 0.9);
+  --border-radius: 10px;
+  --box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 💾 Save Button */
+.save-button {
+  --background: #007aff;
+  --color: white;
+  --border-radius: 10px;
+  margin-top: 24px;
+  padding: 12px 16px;
+  font-weight: bold;
+}
+
+.save-button:disabled {
+  --background: #d6d6d6;
+  --color: #b3b3b3;
+}
+
+/* 🔙 Close Button */
+ion-button {
+  --color: white;
+}
+
+/* 🔘 Hover Effects */
+ion-item:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 🟢 Customizing the Ion-select options */
+ion-select-option {
+  padding: 10px 15px;
+  font-size: 1rem;
+  color: #333;
+}

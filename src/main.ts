@@ -19,8 +19,9 @@ import { environment } from './environments/environment';
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideAuth, getAuth } from '@angular/fire/auth';
 import { provideFirestore, getFirestore } from '@angular/fire/firestore'; // Import Firestore modules
+import { provideDatabase, getDatabase } from '@angular/fire/database'; // Import Database modules
 
-// Firebase config
+// Firebase config (ensure this is your actual Firebase configuration)
 const firebaseConfig = {
   apiKey: 'AIzaSyBtumbfL-GL7BeUfivtBgzInkSg5j3jnfc',
   authDomain: 'topic-app-4b583.firebaseapp.com',
@@ -40,11 +41,17 @@ bootstrapApplication(AppComponent, {
   providers: [
     // Initialize Firebase (ensure it's done before accessing Firebase services)
     provideFirebaseApp(() => initializeApp(firebaseConfig)),
+
+    // Provide Firebase services (Auth, Firestore, Database, etc.)
     provideAuth(() => getAuth()),
-    provideFirestore(() => getFirestore()), // Provide Firestore service
-    // Provide Firebase Auth service
+    provideFirestore(() => getFirestore()), // Add Firestore provider
+    provideDatabase(() => getDatabase()), // Add Database provider (if needed)
+
+    // Ionic setup
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     provideIonicAngular(),
+
+    // Router setup with preloading strategy
     provideRouter(routes, withPreloading(PreloadAllModules)),
   ],
 });

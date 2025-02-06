@@ -2,18 +2,11 @@ import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
 import { LoginPage } from './login/login.page';
 import { RegisterPage } from './register/register.page';
-import { HomePage } from './home/home.page';
-import { TopicDetailsPage } from './topic-details.page/topic-details.page.component';
 
 export const routes: Routes = [
   {
-    path: 'home',
-    //canActivate: [AuthGuard],
-    component: HomePage,
-  },
-  {
     path: '',
-    redirectTo: 'home',
+    redirectTo: 'login',
     pathMatch: 'full',
   },
   { path: 'login', component: LoginPage },
@@ -21,10 +14,7 @@ export const routes: Routes = [
     path: 'register',
     component: RegisterPage,
   },
-  {
-    path: 'topics/:topicId',
-    component: TopicDetailsPage,
-  },
+
   {
     path: 'admin-dashboard',
     loadComponent: () =>
@@ -49,6 +39,18 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./manage-employees/manage-employees.page').then(
         (m) => m.ManageEmployeesPage
+      ),
+  },
+  {
+    path: 'planing',
+    loadComponent: () =>
+      import('./planing/planing.page').then((m) => m.PlanningPage),
+  },
+  {
+    path: 'manage-positions',
+    loadComponent: () =>
+      import('./manage-positions/manage-positions.page').then(
+        (m) => m.ManagePositionsPage
       ),
   },
 ];

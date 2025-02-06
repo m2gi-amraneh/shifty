@@ -37,6 +37,7 @@ addIcons({
 
     <ion-content class="ion-padding main-content">
       <div class="dashboard-grid">
+        <!-- Existing Cards -->
         <ion-card class="dashboard-card" button routerLink="/scan-qr">
           <div class="card-gradient qr-gradient"></div>
           <ion-icon name="qr-code-outline" class="card-icon"></ion-icon>
@@ -55,7 +56,7 @@ addIcons({
           </ion-card-header>
         </ion-card>
 
-        <ion-card class="dashboard-card" button routerLink="/planning">
+        <ion-card class="dashboard-card" button routerLink="/planing">
           <div class="card-gradient schedule-gradient"></div>
           <ion-icon name="calendar-number-outline" class="card-icon"></ion-icon>
           <ion-card-header>
@@ -70,6 +71,16 @@ addIcons({
           <ion-card-header>
             <ion-card-title>Documentation</ion-card-title>
             <ion-card-subtitle>System features</ion-card-subtitle>
+          </ion-card-header>
+        </ion-card>
+
+        <!-- New Card for Work Positions -->
+        <ion-card class="dashboard-card" button routerLink="/manage-positions">
+          <div class="card-gradient position-gradient"></div>
+          <ion-icon name="person-add-outline" class="card-icon"></ion-icon>
+          <ion-card-header>
+            <ion-card-title>Work Positions</ion-card-title>
+            <ion-card-subtitle>Manage employee roles</ion-card-subtitle>
           </ion-card-header>
         </ion-card>
       </div>
@@ -96,35 +107,6 @@ addIcons({
 
       .main-content {
         --background: #0f0f1f;
-      }
-
-      .welcome-section {
-        margin: 2rem 0 3rem;
-        text-align: center;
-      }
-
-      .welcome-text {
-        font-size: 2.5rem;
-        background: linear-gradient(45deg, #00b4d8, #90e0ef);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 1.5rem;
-        font-weight: 600;
-      }
-
-      .status-row {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        margin-top: 1rem;
-      }
-
-      .status-chip {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        backdrop-filter: blur(5px);
-        font-size: 0.9rem;
       }
 
       .dashboard-grid {
@@ -170,6 +152,9 @@ addIcons({
       }
       .docs-gradient {
         background: #7b2cbf;
+      }
+      .position-gradient {
+        background: #4caf50; /* Change gradient to suit your design */
       }
 
       .dashboard-card:hover .card-gradient {

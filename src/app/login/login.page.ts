@@ -6,7 +6,7 @@ import {
   ReactiveFormsModule,
 } from '@angular/forms';
 import { IonicModule, ToastController } from '@ionic/angular';
-import { CommonModule } from '@angular/common';
+import { AsyncPipe, CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { addIcons } from 'ionicons';
@@ -17,7 +17,13 @@ addIcons({ logoGoogle, logoFacebook });
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [IonicModule, CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [
+    IonicModule,
+    CommonModule,
+    ReactiveFormsModule,
+    RouterModule,
+    AsyncPipe,
+  ],
   template: `
     <ion-header>
       <ion-toolbar color="primary">

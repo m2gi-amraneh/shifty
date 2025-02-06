@@ -35,6 +35,10 @@ addIcons({ logoGoogle, logoFacebook });
 
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
           <ion-item class="ion-margin-bottom">
+            <ion-label position="floating">name </ion-label>
+            <ion-input type="text" formControlName="name"> </ion-input>
+          </ion-item>
+          <ion-item class="ion-margin-bottom">
             <ion-label position="floating">Email</ion-label>
             <ion-input type="email" formControlName="email"></ion-input>
           </ion-item>
@@ -117,16 +121,17 @@ export class RegisterPage {
     private router: Router
   ) {
     this.registerForm = this.fb.group({
+      name: ['', [Validators.required]], // Add name field
+
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
   }
-
   async onSubmit() {
     if (this.registerForm.valid) {
       try {
-        const { email, password } = this.registerForm.value;
-        await this.authService.register(email, password);
+        const { name, email, password } = this.registerForm.value; // Include name
+        await this.authService.register(name, email, password); // Pass name to AuthService
         this.router.navigate(['/home']);
       } catch (error) {
         console.error('Registration error:', error);
@@ -137,7 +142,7 @@ export class RegisterPage {
   async loginWithGoogle() {
     try {
       await this.authService.signInWithGoogle();
-      this.router.navigate(['/home']);
+      this.router.navigate(['/employee-dashboard']);
     } catch (error) {
       console.error('Google login error:', error);
     }
@@ -146,7 +151,7 @@ export class RegisterPage {
   async loginWithFacebook() {
     try {
       await this.authService.signInWithFacebook();
-      this.router.navigate(['/home']);
+      this.router.navigate(['/employee-dashboard']);
     } catch (error) {
       console.error('Facebook login error:', error);
     }

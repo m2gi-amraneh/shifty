@@ -52,18 +52,48 @@ export class AuthService {
     return signInWithEmailAndPassword(this.auth, email, password);
   }
 
-  register(email: string, password: string) {
+  // Update the register method to accept name
+  register(name: string, email: string, password: string): Promise<any> {
     return createUserWithEmailAndPassword(this.auth, email, password).then(
       (userCredential) => {
-        // Sauvegarder le rôle dans Firestore
-        return this.saveUserData(userCredential.user?.uid, email, 'employee'); // Force "employee" role
+        // Save user data including name
+        return this.saveUserData(
+          userCredential.user?.uid,
+          name,
+          email,
+          'employee'
+        );
       }
     );
   }
-  private saveUserData(uid: string | undefined, email: string, role: string) {
+
+  // Update saveUserData to include name
+  private saveUserData(
+    uid: string | undefined,
+    name: string,
+    email: string,
+    role: string
+  ) {
     const userRef = doc(this.firestore, `users/${uid}`);
-    return setDoc(userRef, { email, role });
+    return setDoc(userRef, { name, email, role }); // Save name to Firestore
   }
+
+  // Update checkAndAssignRole to include name
+  private async checkAndAssignRole(
+    uid: string,
+    name: string,
+    email: string
+  ): Promise<void> {
+    const userRef = doc(this.firestore, `users/${uid}`);
+    const userDoc = await getDoc(userRef);
+
+    if (!userDoc.exists()) {
+      // New user, assign "employee" role and save name
+      await setDoc(userRef, { name, email, role: 'employee' });
+    }
+  }
+
+  // Update social login methods to include name
   async signInWithGoogle(): Promise<any> {
     try {
       const provider = new GoogleAuthProvider();
@@ -71,17 +101,20 @@ export class AuthService {
       const user = credential.user;
 
       if (user) {
-        await this.checkAndAssignRole(user.uid, user.email || '');
+        await this.checkAndAssignRole(
+          user.uid,
+          user.displayName || '',
+          user.email || ''
+        ); // Pass display name
       }
 
-      return credential; // ✅ Return the user credential
+      return credential;
     } catch (error) {
       console.error('Google Sign-In Error:', error);
-      throw error; // Rethrow error so it can be handled in the calling function
+      throw error;
     }
   }
 
-  // Facebook Sign-In with Role Assignment
   async signInWithFacebook(): Promise<any> {
     try {
       const provider = new FacebookAuthProvider();
@@ -89,24 +122,20 @@ export class AuthService {
       const user = credential.user;
 
       if (user) {
-        await this.checkAndAssignRole(user.uid, user.email || '');
+        await this.checkAndAssignRole(
+          user.uid,
+          user.displayName || '',
+          user.email || ''
+        ); // Pass display name
       }
 
-      return credential; // ✅ Return the user credential
+      return credential;
     } catch (error) {
-      console.error('Google Sign-In Error:', error);
-      throw error; // Rethrow error so it can be handled in the calling function
+      console.error('Facebook Sign-In Error:', error);
+      throw error;
     }
   }
-  private async checkAndAssignRole(uid: string, email: string): Promise<void> {
-    const userRef = doc(this.firestore, `users/${uid}`);
-    const userDoc = await getDoc(userRef);
 
-    if (!userDoc.exists()) {
-      // New user, assign "employee" role
-      await setDoc(userRef, { email, role: 'employee' });
-    }
-  }
   // Logout
   logout(): Promise<void> {
     return signOut(this.auth).then(() => {
