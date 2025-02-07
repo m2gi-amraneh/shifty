@@ -93,7 +93,7 @@ addIcons({
             <ion-card-subtitle>Manage employee abcence</ion-card-subtitle>
           </ion-card-header>
         </ion-card>
-        <ion-card class="dashboard-card" button routerLink="/">
+        <ion-card class="dashboard-card" button routerLink="/closing-periods">
           <div class="card-gradient position-gradient"></div>
           <ion-icon name="bed" class="card-icon"></ion-icon>
           <ion-card-header>

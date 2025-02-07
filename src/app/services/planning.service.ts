@@ -14,7 +14,7 @@ import { inject } from '@angular/core';
 import { Observable, from } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-interface Shift {
+export interface Shift {
   id?: string;
   day: string;
   startTime: string;

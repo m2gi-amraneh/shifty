@@ -62,6 +62,23 @@ export const routes: Routes = [
   },
   {
     path: 'absence-employee',
-    loadComponent: () => import('./absence-employee/absence-employee.page').then( m => m.AbsenceEmployeePage)
+    loadComponent: () =>
+      import('./absence-employee/absence-employee.page').then(
+        (m) => m.AbsenceEmployeePage
+      ),
+  },
+  {
+    path: 'closing-periods',
+    loadComponent: () =>
+      import('./closing-periods/closing-periods.page').then(
+        (m) => m.ClosingDaysComponent
+      ),
+  },
+  {
+    path: 'employee-planing-view',
+    loadComponent: () =>
+      import('./employee-planing-view/employee-planing-view.page').then(
+        (m) => m.EmployeePlanningViewPage
+      ),
   },
 ];
