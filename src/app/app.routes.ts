@@ -81,4 +81,21 @@ export const routes: Routes = [
         (m) => m.EmployeePlanningViewPage
       ),
   },
+  {
+    path: 'qr-scan',
+    loadComponent: () =>
+      import('./qr-scan/qr-scan.page').then((m) => m.QrScanPage),
+  },
+  {
+    path: 'badged-shifts',
+    loadComponent: () =>
+      import('./badged-shifts/badged-shifts.page').then(
+        (m) => m.BadgedShiftsPage
+      ),
+  },
+  {
+    path: 'shift-report',
+    loadComponent: () =>
+      import('./shift-report/shift-report.page').then((m) => m.ShiftReportPage),
+  },
 ];
