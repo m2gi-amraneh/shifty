@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,59 +12,22 @@ import {
   trashOutline,
   addOutline,
 } from 'ionicons/icons';
-import { trigger, transition, animate, style } from '@angular/animations';
-interface Employee {
-  id: string;
-  name: string;
-  grade: string;
-  planningUrl: string;
-  badgingUrl: string;
-}
+import { Subscription } from 'rxjs';
+import { Employee, UsersService } from '../services/users.service';
 
 @Component({
   selector: 'app-manage-employees',
   templateUrl: './manage-employees.page.html',
   styleUrls: ['./manage-employees.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, RouterModule, FormsModule],
+  imports: [IonicModule, CommonModule, FormsModule],
 })
-export class ManageEmployeesPage {
-  deleteEmployee(_t23: Employee) {
-    throw new Error('Method not implemented.');
-  }
-  viewBadging(_t23: Employee) {
-    throw new Error('Method not implemented.');
-  }
-  viewPlanning(_t23: Employee) {
-    throw new Error('Method not implemented.');
-  }
-  employees: Employee[] = [
-    {
-      id: '1',
-      name: 'John Doe',
-      grade: 'Manager',
-      planningUrl: '/employee-planning/1',
-      badgingUrl: '/employee-badging/1',
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      grade: 'Developer',
-      planningUrl: '/employee-planning/2',
-      badgingUrl: '/employee-badging/2',
-    },
-    {
-      id: '3',
-      name: 'Mark Johnson',
-      grade: 'Designer',
-      planningUrl: '/employee-planning/3',
-      badgingUrl: '/employee-badging/3',
-    },
-  ]; // Keep your existing employee array
+export class ManageEmployeesPage implements OnInit, OnDestroy {
+  employees: Employee[] = [];
+  filteredEmployees: Employee[] = [];
+  private employeesSubscription: Subscription | null = null;
 
-  filteredEmployees: Employee[] = this.employees;
-
-  constructor(private router: Router) {
+  constructor(private router: Router, private usersService: UsersService) {
     addIcons({
       searchOutline,
       personCircleOutline,
@@ -75,17 +38,51 @@ export class ManageEmployeesPage {
     });
   }
 
+  ngOnInit() {
+    this.employeesSubscription = this.usersService.getEmployees().subscribe({
+      next: (employees) => {
+        this.employees = employees;
+        this.filteredEmployees = [...employees];
+      },
+      error: (error) => {
+        console.error('Error fetching employees', error);
+      },
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.employeesSubscription) {
+      this.employeesSubscription.unsubscribe();
+    }
+  }
+
   filterEmployees(event: CustomEvent) {
     const searchTerm = event.detail.value.toLowerCase();
-    this.filteredEmployees = this.employees.filter(
-      (employee) =>
-        employee.name.toLowerCase().includes(searchTerm) ||
-        employee.grade.toLowerCase().includes(searchTerm)
+    this.filteredEmployees = this.employees.filter((employee) =>
+      employee.name.toLowerCase().includes(searchTerm)
     );
   }
 
-  // Keep your existing methods and add:
+  deleteEmployee(employee: Employee) {
+    if (employee.id) {
+      // this.usersService.deleteEmployee(employee.id);
+    }
+  }
+
   addEmployee() {
-    // Add your employee creation logic
+    // Implement navigation to add employee page or show a modal
+    this.router.navigate(['/add-employee']);
+  }
+
+  viewPlanning(employee: Employee) {
+    if (employee) {
+      //  this.router.navigate([employee.planningUrl]);
+    }
+  }
+
+  viewBadging(employee: Employee) {
+    if (employee) {
+      // this.router.navigate([employee.badgingUrl]);
+    }
   }
 }

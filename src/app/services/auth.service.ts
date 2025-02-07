@@ -10,6 +10,7 @@ import {
   GoogleAuthProvider,
   FacebookAuthProvider,
   signInWithPopup,
+  onAuthStateChanged,
 } from '@angular/fire/auth';
 import { Observable, BehaviorSubject } from 'rxjs';
 import {
@@ -30,6 +31,7 @@ export class AuthService {
   constructor(private router: Router, private firebaseApp: FirebaseApp) {
     this.auth = getAuth(this.firebaseApp);
     this.firestore = getFirestore(this.firebaseApp); // Get Firestore instance from FirebaseApp
+    this.initializeAuthStateListener();
   }
   // Fetch user role from Firestore
   async getUserRole(uid: string): Promise<string | null> {
@@ -144,12 +146,9 @@ export class AuthService {
   }
 
   // Get current user as Observable
-  getCurrentUser(): Observable<string | null> {
-    return new Observable((observer) => {
-      this.auth.onAuthStateChanged((user) => {
-        observer.next(user ? user.uid : null);
-      });
-    });
+
+  getCurrentUser() {
+    return this.userSubject.asObservable();
   }
 
   // Get current user ID
@@ -163,6 +162,15 @@ export class AuthService {
       this.auth.onAuthStateChanged((user) => {
         observer.next(!!user);
       });
+    });
+  }
+  private initializeAuthStateListener(): void {
+    onAuthStateChanged(this.auth, (user) => {
+      if (user) {
+        this.userSubject.next(user);
+      } else {
+        this.userSubject.next(null);
+      }
     });
   }
 }

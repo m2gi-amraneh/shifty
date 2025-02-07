@@ -9,10 +9,12 @@ import {
   documentOutline,
   calendarNumberOutline,
   peopleOutline,
+  bed,
 } from 'ionicons/icons';
 
 // Add the icons to use them
 addIcons({
+  bed,
   qrCodeOutline,
   peopleOutline,
   calendarNumberOutline,
@@ -83,6 +85,22 @@ addIcons({
             <ion-card-subtitle>Manage employee roles</ion-card-subtitle>
           </ion-card-header>
         </ion-card>
+        <ion-card class="dashboard-card" button routerLink="/abcance-admin">
+          <div class="card-gradient position-gradient"></div>
+          <ion-icon name="person-add-outline" class="card-icon"></ion-icon>
+          <ion-card-header>
+            <ion-card-title>abcence</ion-card-title>
+            <ion-card-subtitle>Manage employee abcence</ion-card-subtitle>
+          </ion-card-header>
+        </ion-card>
+        <ion-card class="dashboard-card" button routerLink="/">
+          <div class="card-gradient position-gradient"></div>
+          <ion-icon name="bed" class="card-icon"></ion-icon>
+          <ion-card-header>
+            <ion-card-title>closing</ion-card-title>
+            <ion-card-subtitle>Manage closing days</ion-card-subtitle>
+          </ion-card-header>
+        </ion-card>
       </div>
     </ion-content>
   `,
@@ -132,9 +150,9 @@ addIcons({
       }
 
       .card-gradient {
-        position: absolute;
-        width: 200px;
-        height: 200px;
+        position: grid;
+        width: 100px;
+        height: 100px;
         border-radius: 50%;
         filter: blur(60px);
         opacity: 0.4;

@@ -129,19 +129,21 @@ export class PlanningPage {
   }
 
   onSlideChange(event: any) {
+    this.loadShifts();
+
     if (this.swiper) {
       const activeIndex = this.swiper.activeIndex;
       this.selectedDay = this.weekDays[activeIndex];
-      this.loadShifts();
     }
   }
 
   onSegmentChange() {
+    this.loadShifts();
+
     const dayIndex = this.getDayIndex(this.selectedDay);
     if (this.swiper) {
       this.swiper.slideTo(dayIndex);
     }
-    this.loadShifts();
   }
 
   formatTime(timeString: string): string {

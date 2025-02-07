@@ -4,9 +4,10 @@ import { inject } from '@angular/core';
 import { collectionData } from 'rxfire/firestore';
 import { Observable } from 'rxjs';
 
-interface Employee {
+export interface Employee {
   id: string;
   name: string;
+  role: string;
   // Add other relevant fields here
 }
 
@@ -20,7 +21,7 @@ export class UsersService {
 
   getEmployees(): Observable<Employee[]> {
     const usersRef = collection(this.firestore, 'users');
-    const employeesQuery = query(usersRef, where('role', '==', 'employee'));
+    const employeesQuery = query(usersRef, where('role', '!=', 'admin'));
     return collectionData(employeesQuery, { idField: 'id' }) as Observable<
       Employee[]
     >;

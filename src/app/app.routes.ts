@@ -53,4 +53,15 @@ export const routes: Routes = [
         (m) => m.ManagePositionsPage
       ),
   },
+  {
+    path: 'abcance-admin',
+    loadComponent: () =>
+      import('./abcance-admin/abcance-admin.page').then(
+        (m) => m.AbcanceAdminPage
+      ),
+  },
+  {
+    path: 'absence-employee',
+    loadComponent: () => import('./absence-employee/absence-employee.page').then( m => m.AbsenceEmployeePage)
+  },
 ];
