@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { ToastController } from '@ionic/angular';
 import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,8 +11,14 @@ import {
   timeOutline,
   checkmarkCircleOutline,
   closeCircleOutline,
+  calendarOutline,
+  documentTextOutline,
+  business,
+  businessOutline,
+  hourglassOutline,
 } from 'ionicons/icons';
 import { AbsenceRequest, AbsenceService } from '../services/absence.service';
+import { map, Observable, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-absence-management',
@@ -20,109 +27,164 @@ import { AbsenceRequest, AbsenceService } from '../services/absence.service';
   template: `
     <ion-header>
       <ion-toolbar class="header-toolbar">
-        <ion-title>Absence Management</ion-title>
-        <ion-buttons slot="end">
-          <ion-button (click)="toggleFilterMenu()">
-            <ion-icon name="filter-outline"></ion-icon>
-          </ion-button>
+        <ion-buttons slot="start">
+          <ion-back-button defaultHref="/admin-dashboard"></ion-back-button>
         </ion-buttons>
+        <ion-title>My Absences</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content class="ion-padding">
-      <ion-segment [(ngModel)]="selectedStatus" (ionChange)="filterRequests()">
-        <ion-segment-button value="pending">
-          <ion-label>Pending</ion-label>
-          <ion-icon name="time-outline"></ion-icon>
-        </ion-segment-button>
-        <ion-segment-button value="approved">
-          <ion-label>Approved</ion-label>
-          <ion-icon name="checkmark-circle-outline"></ion-icon>
-        </ion-segment-button>
-        <ion-segment-button value="rejected">
-          <ion-label>Rejected</ion-label>
-          <ion-icon name="close-circle-outline"></ion-icon>
-        </ion-segment-button>
-      </ion-segment>
+      <!-- Stats Cards -->
+      <ion-grid class="stats-grid">
+        <ion-row>
+          <ion-col size="4">
+            <ion-card
+              class="stats-card pending"
+              [class.active]="selectedStatus === 'pending'"
+              (click)="selectedStatus = 'pending'; filterRequests()"
+            >
+              <ion-card-content>
+                <ion-icon name="hourglass-outline"></ion-icon>
+                <h2>
+                  {{ (absenceService.pendingRequests$ | async)?.length || 0 }}
+                </h2>
+                <p>Pending</p>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+          <ion-col size="4">
+            <ion-card
+              class="stats-card approved"
+              [class.active]="selectedStatus === 'approved'"
+              (click)="selectedStatus = 'approved'; filterRequests()"
+            >
+              <ion-card-content>
+                <ion-icon name="checkmark-circle-outline"></ion-icon>
+                <h2>{{ (getApprovedCount$ | async) || 0 }}</h2>
+                <p>Approved</p>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+          <ion-col size="4">
+            <ion-card
+              class="stats-card rejected"
+              [class.active]="selectedStatus === 'rejected'"
+              (click)="selectedStatus = 'rejected'; filterRequests()"
+            >
+              <ion-card-content>
+                <ion-icon name="close-circle-outline"></ion-icon>
+                <h2>{{ (getRejectedCount$ | async) || 0 }}</h2>
+                <p>Rejected</p>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
 
+      <!-- Request Cards -->
       <div class="requests-container">
-        <ion-card *ngFor="let request of filteredRequests" class="request-card">
-          <ion-card-header>
-            <ion-card-subtitle>{{
-              request.type | titlecase
-            }}</ion-card-subtitle>
-            <ion-card-title>{{ request.employeeName }}</ion-card-title>
-          </ion-card-header>
+        <ng-container *ngIf="filteredRequests$ | async as requests">
+          <div *ngIf="requests.length === 0" class="empty-state">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <h2>No {{ selectedStatus }} requests</h2>
+            <p>
+              There are currently no {{ selectedStatus }} absence requests to
+              display.
+            </p>
+          </div>
 
-          <ion-card-content>
-            <ion-grid>
-              <ion-row>
-                <ion-col size="6">
-                  <p><strong>Start Date:</strong></p>
-                  <p>{{ request.startDate | date }}</p>
-                </ion-col>
-                <ion-col size="6">
-                  <p><strong>End Date:</strong></p>
-                  <p>{{ request.endDate | date }}</p>
-                </ion-col>
-              </ion-row>
-              <ion-row>
-                <ion-col size="12">
-                  <p><strong>Reason:</strong></p>
-                  <p>{{ request.reason }}</p>
-                </ion-col>
-              </ion-row>
+          <ion-card
+            *ngFor="let request of requests"
+            class="request-card"
+            [class]="request.status"
+          >
+            <div class="request-header">
+              <div class="employee-info">
+                <ion-avatar>
+                  <img
+                    [src]="
+                      'https://ui-avatars.com/api/?name=' + request.employeeName
+                    "
+                    alt="employee avatar"
+                  />
+                </ion-avatar>
+                <div class="text-info">
+                  <h2>{{ request.employeeName }}</h2>
+                  <p class="type">
+                    <ion-icon name="business-outline"></ion-icon>
+                    {{ request.type | titlecase }}
+                  </p>
+                </div>
+              </div>
+              <div class="date-badge">
+                <ion-icon name="calendar-outline"></ion-icon>
+                <span
+                  >{{ request.startDate | date : 'shortDate' }} -
+                  {{ request.endDate | date : 'shortDate' }}</span
+                >
+              </div>
+            </div>
 
-              <ion-row *ngIf="request.status === 'pending'">
-                <ion-col size="12">
-                  <ion-item>
-                    <ion-label position="floating">Admin Comment</ion-label>
-                    <ion-textarea
-                      [(ngModel)]="request.adminComment"
-                    ></ion-textarea>
-                  </ion-item>
-                </ion-col>
-              </ion-row>
+            <ion-card-content>
+              <div class="reason-section">
+                <h3>
+                  <ion-icon name="document-text-outline"></ion-icon> Reason
+                </h3>
+                <p>{{ request.reason }}</p>
+              </div>
 
-              <ion-row
-                *ngIf="request.status === 'pending'"
-                class="action-buttons"
-              >
-                <ion-col>
+              <div *ngIf="request.status === 'pending'" class="action-section">
+                <ion-item lines="none" class="comment-input">
+                  <ion-label position="stacked">Admin Comment</ion-label>
+                  <ion-textarea
+                    [(ngModel)]="request.adminComment"
+                    placeholder="Add your comment here..."
+                    class="custom-textarea"
+                  ></ion-textarea>
+                </ion-item>
+
+                <div class="action-buttons">
                   <ion-button
-                    expand="block"
+                    fill="solid"
                     color="success"
                     (click)="updateStatus(request, 'approved')"
+                    class="action-button"
                   >
                     <ion-icon name="checkmark-outline" slot="start"></ion-icon>
                     Approve
                   </ion-button>
-                </ion-col>
-                <ion-col>
                   <ion-button
-                    expand="block"
+                    fill="solid"
                     color="danger"
                     (click)="updateStatus(request, 'rejected')"
+                    class="action-button"
                   >
                     <ion-icon name="close-outline" slot="start"></ion-icon>
                     Reject
                   </ion-button>
-                </ion-col>
-              </ion-row>
+                </div>
+              </div>
 
-              <ion-row *ngIf="request.status !== 'pending'" class="status-info">
-                <ion-col size="12">
-                  <div [class]="'status-badge ' + request.status">
-                    {{ request.status | uppercase }}
-                  </div>
-                  <p *ngIf="request.adminComment" class="admin-comment">
-                    <strong>Admin Comment:</strong> {{ request.adminComment }}
-                  </p>
-                </ion-col>
-              </ion-row>
-            </ion-grid>
-          </ion-card-content>
-        </ion-card>
+              <div *ngIf="request.status !== 'pending'" class="status-section">
+                <div [class]="'status-chip ' + request.status">
+                  <ion-icon
+                    [name]="
+                      request.status === 'approved'
+                        ? 'checkmark-circle-outline'
+                        : 'close-circle-outline'
+                    "
+                  ></ion-icon>
+                  {{ request.status | uppercase }}
+                </div>
+                <div *ngIf="request.adminComment" class="admin-comment">
+                  <h3>Admin Comment</h3>
+                  <p>{{ request.adminComment }}</p>
+                </div>
+              </div>
+            </ion-card-content>
+          </ion-card>
+        </ng-container>
       </div>
     </ion-content>
   `,
@@ -133,65 +195,259 @@ import { AbsenceRequest, AbsenceService } from '../services/absence.service';
         --color: white;
       }
 
-      ion-segment {
-        margin-bottom: 1rem;
-        --background: var(--ion-color-light);
+      .title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--ion-color-dark);
       }
 
-      .requests-container {
-        display: grid;
-        gap: 1rem;
-        padding: 1rem;
+      .stats-grid {
+        margin-bottom: 1rem;
+      }
+
+      .stats-card {
+        margin: 0;
+        border-radius: 16px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+
+        &.active {
+          transform: translateY(-4px);
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        ion-card-content {
+          text-align: center;
+          padding: 1rem;
+
+          ion-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+          }
+
+          h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0.5rem 0;
+          }
+
+          p {
+            margin: 0;
+            color: var(--ion-color-medium);
+            font-size: 0.9rem;
+          }
+        }
+
+        &.pending ion-icon {
+          color: var(--ion-color-warning);
+        }
+
+        &.approved ion-icon {
+          color: var(--ion-color-success);
+        }
+
+        &.rejected ion-icon {
+          color: var(--ion-color-danger);
+        }
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--ion-color-medium);
+
+        ion-icon {
+          font-size: 4rem;
+          margin-bottom: 1rem;
+        }
+
+        h2 {
+          font-size: 1.2rem;
+          margin-bottom: 0.5rem;
+        }
+
+        p {
+          font-size: 0.9rem;
+          max-width: 300px;
+          margin: 0 auto;
+        }
       }
 
       .request-card {
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
+        margin: 1rem 0;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
 
-      .status-badge {
-        display: inline-block;
-        padding: 0.5rem 1rem;
-        border-radius: 50px;
-        font-weight: bold;
-        text-align: center;
-        margin-top: 1rem;
-      }
+        .request-header {
+          padding: 1rem;
+          background: var(--ion-color-light);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 
-      .status-badge.approved {
-        background-color: var(--ion-color-success);
-        color: white;
-      }
+          .employee-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
 
-      .status-badge.rejected {
-        background-color: var(--ion-color-danger);
-        color: white;
-      }
+            ion-avatar {
+              width: 48px;
+              height: 48px;
+            }
 
-      .status-badge.pending {
-        background-color: var(--ion-color-warning);
-        color: white;
-      }
+            .text-info {
+              h2 {
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 600;
+              }
 
-      .action-buttons {
-        margin-top: 1rem;
-      }
+              .type {
+                margin: 0.25rem 0 0;
+                color: var(--ion-color-medium);
+                display: flex;
+                align-items: center;
+                gap: 0.25rem;
 
-      .admin-comment {
-        margin-top: 1rem;
-        padding: 0.5rem;
-        background-color: var(--ion-color-light);
-        border-radius: 8px;
+                ion-icon {
+                  font-size: 0.9rem;
+                }
+              }
+            }
+          }
+
+          .date-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--ion-color-medium);
+
+            ion-icon {
+              font-size: 1rem;
+            }
+          }
+        }
+
+        .reason-section {
+          margin-bottom: 1rem;
+
+          h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+            color: var(--ion-color-dark);
+            margin-bottom: 0.5rem;
+
+            ion-icon {
+              font-size: 1.1rem;
+            }
+          }
+
+          p {
+            margin: 0;
+            color: var(--ion-color-medium);
+            line-height: 1.4;
+          }
+        }
+
+        .action-section {
+          .comment-input {
+            --background: var(--ion-color-light);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+
+            ion-label {
+              color: var(--ion-color-dark);
+              font-weight: 500;
+            }
+
+            .custom-textarea {
+              --background: var(--ion-color-light);
+              --padding-start: 0;
+              --padding-end: 0;
+              margin-top: 0.5rem;
+            }
+          }
+
+          .action-buttons {
+            display: flex;
+            gap: 1rem;
+
+            .action-button {
+              flex: 1;
+              margin: 0;
+              --border-radius: 8px;
+            }
+          }
+        }
+
+        .status-section {
+          .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+
+            &.approved {
+              background: var(--ion-color-success-light);
+              color: var(--ion-color-success);
+            }
+
+            &.rejected {
+              background: var(--ion-color-danger-light);
+              color: var(--ion-color-danger);
+            }
+
+            ion-icon {
+              font-size: 1.1rem;
+            }
+          }
+
+          .admin-comment {
+            background: var(--ion-color-light);
+            padding: 1rem;
+            border-radius: 8px;
+
+            h3 {
+              font-size: 0.9rem;
+              color: var(--ion-color-dark);
+              margin: 0 0 0.5rem;
+            }
+
+            p {
+              margin: 0;
+              color: var(--ion-color-medium);
+              font-size: 0.9rem;
+              line-height: 1.4;
+            }
+          }
+        }
       }
     `,
   ],
 })
-export class AbcanceAdminPage implements OnInit {
+export class AbcanceAdminPage implements OnInit, OnDestroy {
   selectedStatus: 'pending' | 'approved' | 'rejected' = 'pending';
-  filteredRequests: AbsenceRequest[] = [];
-
-  constructor(private absenceService: AbsenceService) {
+  filteredRequests$!: Observable<AbsenceRequest[]>;
+  private statusSubscription?: Subscription;
+  getApprovedCount$!: Observable<number>;
+  getRejectedCount$!: Observable<number>;
+  constructor(
+    public absenceService: AbsenceService,
+    private toastController: ToastController
+  ) {
     addIcons({
+      hourglassOutline,
+      businessOutline,
+      documentTextOutline,
+      calendarOutline,
       checkmarkOutline,
       closeOutline,
       filterOutline,
@@ -203,20 +459,41 @@ export class AbcanceAdminPage implements OnInit {
 
   ngOnInit() {
     this.filterRequests();
+    this.getApprovedCount$ = this.absenceService.allRequests$.pipe(
+      map(
+        (requests) => requests.filter((req) => req.status === 'approved').length
+      )
+    );
+
+    this.getRejectedCount$ = this.absenceService.allRequests$.pipe(
+      map(
+        (requests) => requests.filter((req) => req.status === 'rejected').length
+      )
+    );
+  }
+
+  ngOnDestroy() {
+    if (this.statusSubscription) {
+      this.statusSubscription.unsubscribe();
+    }
   }
 
   filterRequests() {
     if (this.selectedStatus === 'pending') {
-      this.absenceService.getPendingRequests().subscribe((requests) => {
-        this.filteredRequests = requests;
-      });
+      this.filteredRequests$ = this.absenceService.pendingRequests$;
     } else {
-      this.absenceService
-        .getFilteredRequests(this.selectedStatus)
-        .subscribe((requests) => {
-          this.filteredRequests = requests;
-        });
+      this.filteredRequests$ = this.absenceService.getFilteredRequests(
+        this.selectedStatus
+      );
     }
+  }
+  async presentToast(message: string, color: 'success' | 'danger') {
+    const toast = await this.toastController.create({
+      message,
+      duration: 2000,
+      color,
+    });
+    await toast.present();
   }
 
   async updateStatus(
@@ -225,19 +502,25 @@ export class AbcanceAdminPage implements OnInit {
   ) {
     if (request.id) {
       try {
-        await this.absenceService.updateRequestStatus(
+        const success = await this.absenceService.updateRequestStatus(
           request.id,
           newStatus,
           request.adminComment || ''
         );
-        this.filterRequests();
+
+        if (success) {
+          // Display success message
+          this.presentToast(`Request ${newStatus} successfully`, 'success');
+        }
       } catch (error) {
         console.error('Error updating request status:', error);
+        // Display error message
+        this.presentToast('Error updating request status', 'danger');
       }
     }
   }
 
   toggleFilterMenu() {
-    // Implement additional filtering if needed
+    // Implémentez le filtrage supplémentaire si nécessaire
   }
 }

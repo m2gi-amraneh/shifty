@@ -12,6 +12,7 @@ import {
   updateDoc,
 } from '@angular/fire/firestore';
 import { Observable, from } from 'rxjs';
+import { Timestamp } from 'firebase/firestore';
 
 export interface BadgedShift {
   id?: string;
@@ -19,7 +20,7 @@ export interface BadgedShift {
   shiftId: string;
   badgeInTime: Date;
   badgeOutTime?: Date;
-  status: 'checked-in' | 'checked-out' | 'completed';
+  status: 'checked-in' | 'on-break' | 'completed';
 }
 
 @Injectable({
@@ -108,7 +109,7 @@ export class BadgeService {
       status: 'completed',
     },
   ];
-  constructor(private firestore: Firestore) {}
+  constructor(private firestore: Firestore) { }
 
   // Validate QR Code (mock implementation - replace with your actual validation logic)
   validateQRCode(qrCode: string): boolean {
@@ -155,10 +156,10 @@ export class BadgeService {
       getDocs(q).then((snapshot) =>
         snapshot.docs.map(
           (doc) =>
-            ({
-              id: doc.id,
-              ...doc.data(),
-            } as BadgedShift)
+          ({
+            id: doc.id,
+            ...doc.data(),
+          } as BadgedShift)
         )
       )
     );
@@ -171,6 +172,32 @@ export class BadgeService {
     await updateDoc(badgeDoc, {
       badgeOutTime: new Date(),
       status: 'completed',
+    });
+  }
+  async updateBadgedShift(badgeId: string, updates: Partial<BadgedShift>): Promise<void> {
+    const badgeDoc = doc(this.firestore, 'badgedShifts', badgeId);
+    await updateDoc(badgeDoc, updates);
+  }
+  async checkExistingBadgedShift(employeeId: string, shiftId: string): Promise<boolean> {
+    const badgeCollection = collection(this.firestore, 'badgedShifts');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const q = query(
+      badgeCollection,
+      where('employeeId', '==', employeeId),
+      where('shiftId', '==', shiftId),
+      where('status', '==', 'completed')
+    );
+
+    const snapshot = await getDocs(q);
+    return snapshot.docs.some(doc => {
+      const data = doc.data();
+      const badgeDate = (data['badgeInTime'] as Timestamp).toDate();
+      return badgeDate >= today && badgeDate < tomorrow;
     });
   }
 }

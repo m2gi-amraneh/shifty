@@ -32,7 +32,7 @@ import {
 } from '@ionic/angular';
 import { register } from 'swiper/element/bundle';
 import { addIcons } from 'ionicons';
-import { add, trash } from 'ionicons/icons';
+import { add, addCircle, calendarOutline, trash, close } from 'ionicons/icons';
 import { SwiperContainer } from 'swiper/element';
 import Swiper from 'swiper';
 import { PlanningService } from '../services/planning.service';
@@ -41,7 +41,7 @@ import { PositionsService } from '../services/positions.service';
 import { UsersService } from '../services/users.service';
 
 register();
-addIcons({ trash, add });
+addIcons({ trash, add, close, addCircle, calendarOutline });
 
 interface Employee {
   id: string;
@@ -101,20 +101,19 @@ export class PlanningPage {
   ) {}
 
   ngOnInit() {
-    this.loadShifts();
+    this.loadShiftsRealtime();
     this.loadEmployees(); // Load employees
     this.loadRoles(); // Load roles
-    this.roles$?.subscribe((roles) => {
-      console.log('Roles: ', roles);
-    });
   }
 
-  loadShifts() {
-    this.planningService
-      .getShiftsForDay(this.selectedDay)
-      .subscribe((shifts) => {
-        this.currentDayShifts = shifts;
-      });
+  loadShiftsRealtime() {
+    // Utiliser la nouvelle méthode temps réel
+    this.shifts$ = this.planningService.getShiftsForDayRealtime(
+      this.selectedDay
+    );
+    this.shifts$.subscribe((shifts) => {
+      this.currentDayShifts = shifts;
+    });
   }
   loadEmployees() {
     this.employees$ = this.usersService.getEmployees(); // Use the service
@@ -129,17 +128,16 @@ export class PlanningPage {
   }
 
   onSlideChange(event: any) {
-    this.loadShifts();
-
     if (this.swiper) {
       const activeIndex = this.swiper.activeIndex;
       this.selectedDay = this.weekDays[activeIndex];
+
+      this.loadShiftsRealtime();
     }
   }
 
   onSegmentChange() {
-    this.loadShifts();
-
+    this.loadShiftsRealtime();
     const dayIndex = this.getDayIndex(this.selectedDay);
     if (this.swiper) {
       this.swiper.slideTo(dayIndex);
@@ -183,7 +181,7 @@ export class PlanningPage {
       .addShift(newShift)
       .then(() => {
         this.closeModal();
-        this.loadShifts();
+        this.loadShiftsRealtime();
       })
       .catch((error) => {
         console.error('Error adding shift: ', error);
@@ -194,7 +192,7 @@ export class PlanningPage {
     this.planningService
       .deleteShift(shiftId)
       .then(() => {
-        this.loadShifts();
+        this.loadShiftsRealtime();
       })
       .catch((error) => {
         console.error('Error removing shift: ', error);

@@ -132,7 +132,7 @@ export class RegisterPage {
       try {
         const { name, email, password } = this.registerForm.value; // Include name
         await this.authService.register(name, email, password); // Pass name to AuthService
-        this.router.navigate(['/home']);
+        this.router.navigate(['/employee-dashboard']);
       } catch (error) {
         console.error('Registration error:', error);
       }

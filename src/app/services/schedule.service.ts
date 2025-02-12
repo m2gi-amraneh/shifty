@@ -5,47 +5,47 @@ import {
   query,
   where,
   getDocs,
+  collectionData,
 } from '@angular/fire/firestore';
 import { Timestamp } from 'firebase/firestore';
+import { Observable } from 'rxjs';
 import { Shift } from './planning.service';
 import { AbsenceRequest } from './absence.service';
 import { ClosingPeriod } from './closing-periods.service';
+
 @Injectable({
   providedIn: 'root',
 })
 export class ScheduleService {
   constructor(private firestore: Firestore) {}
 
-  async getShiftsByEmployeeAndDay(
+  getShiftsByEmployeeAndDay(
     employeeId: string,
     day: string
-  ): Promise<Shift[]> {
+  ): Observable<Shift[]> {
     const shiftsRef = collection(this.firestore, 'shifts');
     const q = query(
       shiftsRef,
       where('employee.id', '==', employeeId),
       where('day', '==', day)
     );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((doc) => doc.data() as Shift);
+    return collectionData(q) as Observable<Shift[]>;
   }
 
-  async getApprovedAbsencesByEmployee(
+  getApprovedAbsencesByEmployee(
     employeeId: string
-  ): Promise<AbsenceRequest[]> {
+  ): Observable<AbsenceRequest[]> {
     const absencesRef = collection(this.firestore, 'absences');
     const q = query(
       absencesRef,
       where('employeeId', '==', employeeId),
       where('status', '==', 'approved')
     );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((doc) => doc.data() as AbsenceRequest);
+    return collectionData(q) as Observable<AbsenceRequest[]>;
   }
 
-  async getClosingPeriods(): Promise<ClosingPeriod[]> {
+  getClosingPeriods(): Observable<ClosingPeriod[]> {
     const closingPeriodsRef = collection(this.firestore, 'closingPeriods');
-    const querySnapshot = await getDocs(closingPeriodsRef);
-    return querySnapshot.docs.map((doc) => doc.data() as ClosingPeriod);
+    return collectionData(closingPeriodsRef) as Observable<ClosingPeriod[]>;
   }
 }

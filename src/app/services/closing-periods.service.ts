@@ -1,4 +1,3 @@
-// closing-days.service.ts
 import { Injectable } from '@angular/core';
 import {
   Firestore,
@@ -7,8 +6,11 @@ import {
   updateDoc,
   deleteDoc,
   doc,
-  getDocs,
+  onSnapshot,
+  query,
+  DocumentData,
 } from '@angular/fire/firestore';
+import { Observable, BehaviorSubject } from 'rxjs';
 
 export interface ClosingPeriod {
   id?: string;
@@ -22,8 +24,32 @@ export interface ClosingPeriod {
 })
 export class ClosingDaysService {
   private collectionName = 'closingPeriods';
+  private closingPeriodsSubject = new BehaviorSubject<ClosingPeriod[]>([]);
 
-  constructor(private firestore: Firestore) {}
+  // Public observable for real-time updates
+  closingPeriods$ = this.closingPeriodsSubject.asObservable();
+
+  constructor(private firestore: Firestore) {
+    this.initializeRealTimeListener();
+  }
+
+  // Real-time listener for closing periods
+  private initializeRealTimeListener() {
+    const colRef = collection(this.firestore, this.collectionName);
+
+    onSnapshot(
+      colRef,
+      (snapshot) => {
+        const periods = snapshot.docs.map(
+          (doc) => ({ id: doc.id, ...doc.data() } as ClosingPeriod)
+        );
+        this.closingPeriodsSubject.next(periods);
+      },
+      (error) => {
+        console.error('Error listening to closing periods:', error);
+      }
+    );
+  }
 
   async addClosingPeriod(period: ClosingPeriod): Promise<void> {
     const colRef = collection(this.firestore, this.collectionName);
@@ -41,11 +67,8 @@ export class ClosingDaysService {
     await deleteDoc(docRef);
   }
 
-  async getAllClosingPeriods(): Promise<ClosingPeriod[]> {
-    const colRef = collection(this.firestore, this.collectionName);
-    const snapshot = await getDocs(colRef);
-    return snapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as ClosingPeriod)
-    );
+  // Optional method to get current value synchronously
+  getCurrentClosingPeriods(): ClosingPeriod[] {
+    return this.closingPeriodsSubject.getValue();
   }
 }

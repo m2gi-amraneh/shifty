@@ -14,6 +14,7 @@ import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { enableProdMode } from '@angular/core';
 import { environment } from './environments/environment';
+import { provideMessaging, getMessaging } from '@angular/fire/messaging';
 
 // Firebase imports
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
@@ -46,6 +47,7 @@ bootstrapApplication(AppComponent, {
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()), // Add Firestore provider
     provideDatabase(() => getDatabase()), // Add Database provider (if needed)
+    provideMessaging(() => getMessaging()), // Add Messaging provider (if needed)
 
     // Ionic setup
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },

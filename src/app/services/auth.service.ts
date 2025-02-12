@@ -11,6 +11,7 @@ import {
   FacebookAuthProvider,
   signInWithPopup,
   onAuthStateChanged,
+  updateProfile,
 } from '@angular/fire/auth';
 import { Observable, BehaviorSubject } from 'rxjs';
 import {
@@ -20,11 +21,14 @@ import {
   getFirestore,
   setDoc,
 } from 'firebase/firestore';
+import { getMessaging, getToken } from 'firebase/messaging';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
+  messaging = getMessaging();
+
   private auth: Auth;
   private userSubject = new BehaviorSubject<any>(null);
   private firestore: Firestore;
@@ -32,6 +36,11 @@ export class AuthService {
     this.auth = getAuth(this.firebaseApp);
     this.firestore = getFirestore(this.firebaseApp); // Get Firestore instance from FirebaseApp
     this.initializeAuthStateListener();
+  }
+  async getUserToken(): Promise<string | null> {
+    return await getToken(this.messaging, {
+      vapidKey: 'BFSlzK2cM-aDi-1TsHFgh_U9PeqzUmR91ZOBF9Yv7tX2QSxXK4oDiMeDILIyAT0CqUS1-zuH-3Lg5cIfl6S3pu8', // Get this from Firebase
+    });
   }
   // Fetch user role from Firestore
   async getUserRole(uid: string): Promise<string | null> {
@@ -58,6 +67,8 @@ export class AuthService {
   register(name: string, email: string, password: string): Promise<any> {
     return createUserWithEmailAndPassword(this.auth, email, password).then(
       (userCredential) => {
+        const user = userCredential.user;
+        updateProfile(user, { displayName: name });
         // Save user data including name
         return this.saveUserData(
           userCredential.user?.uid,

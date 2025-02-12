@@ -7,9 +7,10 @@ import {
   doc,
   updateDoc,
   addDoc,
+  onSnapshot,
+  DocumentData,
 } from '@angular/fire/firestore';
-import { collectionData } from 'rxfire/firestore';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { inject } from '@angular/core';
 
 export interface AbsenceRequest {
@@ -32,41 +33,125 @@ export class AbsenceService {
   private firestore: Firestore = inject(Firestore);
   private absenceCollection = collection(this.firestore, 'absences');
 
-  constructor() {}
+  // BehaviorSubjects pour stocker l'état des différentes listes d'absences
+  private allRequestsSubject = new BehaviorSubject<AbsenceRequest[]>([]);
+  private pendingRequestsSubject = new BehaviorSubject<AbsenceRequest[]>([]);
+  private employeeRequestsSubject = new BehaviorSubject<AbsenceRequest[]>([]);
 
-  getAllAbsenceRequests(): Observable<AbsenceRequest[]> {
-    return collectionData(this.absenceCollection, {
-      idField: 'id',
-    }) as Observable<AbsenceRequest[]>;
+  // Observables publics
+  allRequests$ = this.allRequestsSubject.asObservable();
+  pendingRequests$ = this.pendingRequestsSubject.asObservable();
+  employeeRequests$ = this.employeeRequestsSubject.asObservable();
+
+  constructor() {
+    // Initialiser les écouteurs en temps réel
+    this.initializeRealtimeListeners();
   }
 
-  getPendingRequests(): Observable<AbsenceRequest[]> {
+  private initializeRealtimeListeners() {
+    // Écouter toutes les demandes
+    onSnapshot(
+      this.absenceCollection,
+      (snapshot) => {
+        const requests = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as AbsenceRequest[];
+        this.allRequestsSubject.next(requests);
+      },
+      (error) => {
+        console.error('Error listening to all requests:', error);
+      }
+    );
+
+    // Écouter les demandes en attente
     const pendingQuery = query(
       this.absenceCollection,
       where('status', '==', 'pending')
     );
-    return collectionData(pendingQuery, { idField: 'id' }) as Observable<
-      AbsenceRequest[]
-    >;
+    onSnapshot(
+      pendingQuery,
+      (snapshot) => {
+        const requests = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as AbsenceRequest[];
+        this.pendingRequestsSubject.next(requests);
+      },
+      (error) => {
+        console.error('Error listening to pending requests:', error);
+      }
+    );
+  }
+
+  getAllAbsenceRequests(): Observable<AbsenceRequest[]> {
+    return this.allRequests$;
+  }
+
+  getPendingRequests(): Observable<AbsenceRequest[]> {
+    return this.pendingRequests$;
   }
 
   getFilteredRequests(
     status: 'approved' | 'rejected'
   ): Observable<AbsenceRequest[]> {
-    const statusQuery = query(
-      this.absenceCollection,
-      where('status', '==', status)
-    );
-    return collectionData(statusQuery, { idField: 'id' }) as Observable<
-      AbsenceRequest[]
-    >;
+    return new Observable<AbsenceRequest[]>((observer) => {
+      const statusQuery = query(
+        this.absenceCollection,
+        where('status', '==', status)
+      );
+
+      const unsubscribe = onSnapshot(
+        statusQuery,
+        (snapshot) => {
+          const requests = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as AbsenceRequest[];
+          observer.next(requests);
+        },
+        (error) => {
+          observer.error(error);
+        }
+      );
+
+      // Cleanup function
+      return () => unsubscribe();
+    });
+  }
+
+  getRequestsByEmployee(employeeId: string): Observable<AbsenceRequest[]> {
+    return new Observable<AbsenceRequest[]>((observer) => {
+      const employeeQuery = query(
+        this.absenceCollection,
+        where('employeeId', '==', employeeId)
+      );
+
+      const unsubscribe = onSnapshot(
+        employeeQuery,
+        (snapshot) => {
+          const requests = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as AbsenceRequest[];
+          this.employeeRequestsSubject.next(requests);
+          observer.next(requests);
+        },
+        (error) => {
+          observer.error(error);
+        }
+      );
+
+      // Cleanup function
+      return () => unsubscribe();
+    });
   }
 
   async updateRequestStatus(
     requestId: string,
     status: 'approved' | 'rejected',
     adminComment: string
-  ) {
+  ): Promise<boolean> {
     const requestRef = doc(this.firestore, `absences/${requestId}`);
     const updateData = {
       status,
@@ -83,25 +168,16 @@ export class AbsenceService {
     }
   }
 
-  // Add this new method for creating requests
   async createRequest(requestData: Partial<AbsenceRequest>): Promise<boolean> {
     try {
-      await addDoc(this.absenceCollection, requestData);
+      await addDoc(this.absenceCollection, {
+        ...requestData,
+        submissionDate: new Date().toISOString(),
+      });
       return true;
     } catch (error) {
       console.error('Error creating absence request:', error);
       return false;
     }
-  }
-
-  // Add this new method for getting employee-specific requests
-  getRequestsByEmployee(employeeId: string): Observable<AbsenceRequest[]> {
-    const employeeQuery = query(
-      this.absenceCollection,
-      where('employeeId', '==', employeeId)
-    );
-    return collectionData(employeeQuery, { idField: 'id' }) as Observable<
-      AbsenceRequest[]
-    >;
   }
 }

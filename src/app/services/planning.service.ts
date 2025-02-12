@@ -9,10 +9,11 @@ import {
   deleteDoc,
   query,
   where,
+  onSnapshot,
 } from '@angular/fire/firestore';
 import { inject } from '@angular/core';
-import { Observable, from } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { getMessaging, getToken } from 'firebase/messaging';
 
 export interface Shift {
   id?: string;
@@ -30,54 +31,108 @@ export interface Shift {
   providedIn: 'root',
 })
 export class PlanningService {
-  private firestore: Firestore = inject(Firestore); // Inject Firestore service
+  private firestore: Firestore = inject(Firestore);
   private readonly collectionName = 'shifts';
+  messaging = getMessaging();
 
-  // Get all shifts
-  getShifts(): Observable<Shift[]> {
-    const shiftsCollection = collection(this.firestore, this.collectionName);
-    return from(getDocs(shiftsCollection)).pipe(
-      map((snapshot) =>
-        snapshot.docs.map((doc) => {
-          const data = doc.data() as Shift;
-          const id = doc.id;
-          return { id, ...data };
-        })
-      )
-    );
+  // BehaviorSubject pour stocker les shifts du jour actuel
+  private currentDayShiftsSubject = new BehaviorSubject<Shift[]>([]);
+  currentDayShifts$ = this.currentDayShiftsSubject.asObservable();
+
+  // Méthode pour obtenir les shifts en temps réel pour un jour spécifique
+  getShiftsForDayRealtime(day: string): Observable<Shift[]> {
+    return new Observable<Shift[]>((observer) => {
+      const shiftsCollection = collection(this.firestore, this.collectionName);
+      const q = query(shiftsCollection, where('day', '==', day));
+
+      // Utiliser onSnapshot pour les mises à jour en temps réel
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const shifts = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...(doc.data() as Shift),
+          }));
+          this.currentDayShiftsSubject.next(shifts);
+          observer.next(shifts);
+        },
+        (error) => {
+          observer.error(error);
+        }
+      );
+
+      // Retourner la fonction de nettoyage
+      return () => unsubscribe();
+    });
   }
 
-  // Get shifts for a specific day
-  getShiftsForDay(day: string): Observable<Shift[]> {
-    const shiftsCollection = collection(this.firestore, this.collectionName);
-    const q = query(shiftsCollection, where('day', '==', day));
+  // Obtenir les shifts pour un employé spécifique en temps réel
+  getShiftsForEmployeeRealtime(employeeId: string): Observable<Shift[]> {
+    return new Observable<Shift[]>((observer) => {
+      const shiftsCollection = collection(this.firestore, this.collectionName);
+      const q = query(shiftsCollection, where('employee.id', '==', employeeId));
 
-    return from(getDocs(q)).pipe(
-      map((snapshot) =>
-        snapshot.docs.map((doc) => {
-          const data = doc.data() as Shift;
-          const id = doc.id;
-          return { id, ...data };
-        })
-      )
-    );
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const shifts = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...(doc.data() as Shift),
+          }));
+          observer.next(shifts);
+        },
+        (error) => {
+          observer.error(error);
+        }
+      );
+
+      return () => unsubscribe();
+    });
   }
 
-  // Add a new shift
+  // Les autres méthodes restent inchangées
   addShift(shift: Shift): Promise<any> {
     const shiftsCollection = collection(this.firestore, this.collectionName);
+    //this.sendNotification(shift.employee.id, 'You have been added to the schedule!');
+
     return addDoc(shiftsCollection, shift);
+
   }
 
-  // Update a shift
   updateShift(shiftId: string, shift: Partial<Shift>): Promise<void> {
     const shiftDoc = doc(this.firestore, `${this.collectionName}/${shiftId}`);
     return updateDoc(shiftDoc, shift);
   }
 
-  // Delete a shift
   deleteShift(shiftId: string): Promise<void> {
     const shiftDoc = doc(this.firestore, `${this.collectionName}/${shiftId}`);
     return deleteDoc(shiftDoc);
+  }
+
+  async sendNotification(userId: string, message: string) {
+    const token = await this.getUserToken(userId);
+    if (!token) return;
+
+    const payload = {
+      notification: {
+        title: 'Schedule Update',
+        body: message,
+      },
+      token: token,
+    };
+
+    fetch('https://fcm.googleapis.com/fcm/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `key=YOUR_SERVER_KEY`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getUserToken(userId: string): Promise<string | null> {
+    // Fetch token from Firestore where user tokens are stored
+    return 'USER_FCM_TOKEN'; // Replace with Firestore query to fetch user token
   }
 }

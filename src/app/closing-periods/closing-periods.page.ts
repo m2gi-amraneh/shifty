@@ -59,7 +59,8 @@ export class ClosingDaysComponent {
   }
 
   async loadClosingPeriods() {
-    this.closingPeriods = await this.closingDaysService.getAllClosingPeriods();
+    this.closingPeriods =
+      await this.closingDaysService.getCurrentClosingPeriods();
   }
 
   editPeriod(period: ClosingPeriod) {

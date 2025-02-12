@@ -1,17 +1,31 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
+import {
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  OnInit,
+  OnDestroy,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { register } from 'swiper/element/bundle';
-import Swiper from 'swiper';
+import { Subscription, combineLatest } from 'rxjs';
 
 import { ScheduleService } from './../services/schedule.service';
 import { Shift } from '../services/planning.service';
 import { ClosingPeriod } from '../services/closing-periods.service';
 import { AbsenceRequest } from '../services/absence.service';
+import { AuthService } from '../services/auth.service';
+import {
+  add,
+  chevronBackCircleOutline,
+  chevronBackOutline,
+  chevronForwardOutline,
+  timeOutline,
+} from 'ionicons/icons';
+import { addIcons } from 'ionicons';
+addIcons({ timeOutline, chevronBackOutline, chevronForwardOutline });
 
 // Register Swiper custom elements
 register();
-
 @Component({
   selector: 'app-employee-planning',
   standalone: true,
@@ -25,34 +39,49 @@ register();
     </ion-header>
 
     <ion-content>
-      <!-- Date Slider -->
-      <div class="date-slider-container">
-        <swiper-container
-          [slidesPerView]="5"
-          [spaceBetween]="10"
-          [centeredSlides]="true"
-          (slidechange)="onDateSlideChange($event)"
-        >
-          <swiper-slide
-            *ngFor="let dateItem of dateRange"
-            [class.active]="isSelectedDate(dateItem)"
-            (click)="selectDate(dateItem)"
+      <!-- Week Display -->
+      <div class="week-container">
+        <div class="week-header">
+          <ion-buttons slot="start">
+            <ion-button (click)="previousWeek()">
+              <ion-icon name="chevron-back-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+          <div class="week-range">
+            {{ getWeekRange() }}
+          </div>
+          <ion-buttons slot="end">
+            <ion-button (click)="nextWeek()">
+              <ion-icon name="chevron-forward-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </div>
+
+        <!-- Date Slider -->
+        <div class="date-slider-container">
+          <swiper-container
+            [slidesPerView]="7"
+            [spaceBetween]="10"
+            [centeredSlides]="false"
           >
-            <div class="date-slide">
-              <div class="day">{{ dateItem | date : 'EEE' }}</div>
-              <div class="date">{{ dateItem | date : 'd' }}</div>
-            </div>
-          </swiper-slide>
-        </swiper-container>
+            <swiper-slide
+              *ngFor="let dateItem of currentWeek"
+              [class.active]="isSelectedDate(dateItem)"
+              (click)="selectDate(dateItem)"
+            >
+              <div class="date-slide">
+                <div class="day">{{ dateItem | date : 'EEE' }}</div>
+                <div class="date">{{ dateItem | date : 'd' }}</div>
+              </div>
+            </swiper-slide>
+          </swiper-container>
+        </div>
       </div>
 
       <!-- Loading Spinner -->
-      <ng-container *ngIf="isLoading">
-        <ion-spinner class="centered-spinner"></ion-spinner>
-      </ng-container>
 
       <!-- Content Sections -->
-      <ng-container *ngIf="!isLoading">
+      <ng-container>
         <!-- Closing Day -->
         <ng-container *ngIf="isClosingDay">
           <ion-card color="light">
@@ -107,15 +136,29 @@ register();
   `,
   styles: [
     `
+      .week-container {
+        padding: 10px;
+        background-color: #f8f9fa; /* Optional: Light background for clarity */
+      }
+
+      .week-header {
+        display: flex;
+        align-items: center; /* Vertically center elements */
+        justify-content: space-between; /* Space buttons evenly */
+        text-align: center;
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+
       .date-slider-container {
         padding: 10px 0;
-        background-color: #f4f5f8;
       }
 
       swiper-slide {
         text-align: center;
         opacity: 0.6;
-        transition: opacity 0.3s;
+        transition: opacity 0.1s;
         cursor: pointer;
       }
 
@@ -152,32 +195,50 @@ register();
     `,
   ],
 })
-export class EmployeePlanningViewPage implements OnInit {
+export class EmployeePlanningViewPage implements OnInit, OnDestroy {
   selectedDate: Date = new Date();
-  dateRange: Date[] = [];
+  currentWeek: Date[] = [];
   shifts: Shift[] = [];
   absences: AbsenceRequest[] = [];
   closingPeriods: ClosingPeriod[] = [];
   isClosingDay = false;
   isAbsent = false;
   isLoading = true;
-  employeeId = 'VCbSYUdJtKWeWkE9NfVrPdNGdL82'; // Replace with dynamic ID
+  employeeId: string | null = null;
 
-  constructor(private planningService: ScheduleService) {}
+  private dataSub: Subscription | null = null;
+  private userSub: Subscription | null = null;
 
+  constructor(
+    private planningService: ScheduleService,
+    private authService: AuthService
+  ) {}
   ngOnInit() {
-    this.generateDateRange();
-    this.loadData();
+    this.generateCurrentWeek();
+    this.userSub = this.authService.getCurrentUser().subscribe((user) => {
+      if (user) {
+        this.employeeId = user.uid;
+        this.loadData();
+      } else {
+        this.isLoading = false; // Stop loading if no user is found
+      }
+    });
   }
 
-  // Generate a range of dates (e.g., 10 days around current date)
-  generateDateRange() {
-    this.dateRange = [];
-    for (let i = -5; i <= 5; i++) {
-      const date = new Date(this.selectedDate);
+  generateCurrentWeek() {
+    const startOfWeek = new Date(this.selectedDate);
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Start from Sunday
+    this.currentWeek = Array.from({ length: 7 }).map((_, i) => {
+      const date = new Date(startOfWeek);
       date.setDate(date.getDate() + i);
-      this.dateRange.push(date);
-    }
+      return date;
+    });
+  }
+
+  getWeekRange(): string {
+    const start = this.currentWeek[0];
+    const end = this.currentWeek[6];
+    return `${start.toDateString()} - ${end.toDateString()}`;
   }
 
   selectDate(date: Date) {
@@ -185,47 +246,54 @@ export class EmployeePlanningViewPage implements OnInit {
     this.loadData();
   }
 
+  previousWeek() {
+    this.selectedDate.setDate(this.selectedDate.getDate() - 7);
+    this.generateCurrentWeek();
+    this.loadData();
+  }
+
+  nextWeek() {
+    this.selectedDate.setDate(this.selectedDate.getDate() + 7);
+    this.generateCurrentWeek();
+    this.loadData();
+  }
+
+  loadData() {
+    if (!this.employeeId) return;
+
+    this.isLoading = true;
+    const dayOfWeek = this.selectedDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+    });
+
+    this.dataSub = combineLatest([
+      this.planningService.getShiftsByEmployeeAndDay(
+        this.employeeId,
+        dayOfWeek
+      ),
+      this.planningService.getApprovedAbsencesByEmployee(this.employeeId),
+      this.planningService.getClosingPeriods(),
+    ]).subscribe({
+      next: ([shifts, absences, closingPeriods]) => {
+        this.shifts = shifts;
+        this.absences = absences;
+        this.closingPeriods = closingPeriods;
+
+        this.checkClosingDay();
+        this.checkAbsence();
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading data:', error);
+        this.isLoading = false;
+      },
+    });
+  }
+
   isSelectedDate(date: Date): boolean {
     return this.selectedDate.toDateString() === date.toDateString();
   }
 
-  onDateSlideChange(event: any) {
-    // Optional: Handle slide change if needed
-    console.log('Slide changed', event);
-  }
-
-  // Rest of the methods remain the same as in the previous implementation
-  async loadData() {
-    try {
-      this.isLoading = true;
-      const dayOfWeek = this.selectedDate.toLocaleDateString('en-US', {
-        weekday: 'long',
-      });
-
-      // Parallel data fetching
-      const [shifts, absences, closingPeriods] = await Promise.all([
-        this.planningService.getShiftsByEmployeeAndDay(
-          this.employeeId,
-          dayOfWeek
-        ),
-        this.planningService.getApprovedAbsencesByEmployee(this.employeeId),
-        this.planningService.getClosingPeriods(),
-      ]);
-
-      this.shifts = shifts;
-      this.absences = absences;
-      this.closingPeriods = closingPeriods;
-
-      this.checkClosingDay();
-      this.checkAbsence();
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      this.isLoading = false;
-    }
-  }
-
-  // Existing methods for checking closing day and absence remain the same
   private isDateWithinInterval(date: Date, start: Date, end: Date): boolean {
     return date >= start && date <= end;
   }
@@ -248,5 +316,10 @@ export class EmployeePlanningViewPage implements OnInit {
         new Date(absence.endDate)
       )
     );
+  }
+
+  ngOnDestroy() {
+    this.dataSub?.unsubscribe();
+    this.userSub?.unsubscribe();
   }
 }

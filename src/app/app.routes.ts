@@ -32,7 +32,7 @@ export const routes: Routes = [
   {
     path: 'scan-qr',
     loadComponent: () =>
-      import('./scan-qr/scan-qr.page').then((m) => m.QrScannerPage),
+      import('./scan-qr/scan-qr.page').then((m) => m.EmployeeBadgePage),
   },
   {
     path: 'manage-employees',

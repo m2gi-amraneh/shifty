@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
   IonicModule,
   ToastController,
@@ -14,7 +14,7 @@ import {
   ReactiveFormsModule,
   FormsModule,
 } from '@angular/forms';
-import { AbsenceService } from '../services/absence.service';
+import { AbsenceRequest, AbsenceService } from '../services/absence.service';
 import { AuthService } from '../services/auth.service';
 import { addIcons } from 'ionicons';
 import {
@@ -25,7 +25,9 @@ import {
   paperPlaneOutline,
   addOutline,
   listOutline,
+  chatboxOutline,
 } from 'ionicons/icons';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-request-absence',
@@ -415,12 +417,15 @@ import {
     `,
   ],
 })
-export class AbsenceEmployeePage implements OnInit {
+export class AbsenceEmployeePage implements OnInit, OnDestroy {
   absenceForm: FormGroup;
   isSubmitting = false;
   minDate = new Date().toISOString();
-  recentRequests: any[] = [];
+  recentRequests: AbsenceRequest[] = [];
   currentUser: any;
+  selectedView: 'list' | 'new' = 'list';
+
+  private requestsSubscription?: Subscription;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -429,6 +434,7 @@ export class AbsenceEmployeePage implements OnInit {
     private toastController: ToastController
   ) {
     addIcons({
+      chatboxOutline,
       paperPlaneOutline,
       addOutline,
       listOutline,
@@ -448,47 +454,56 @@ export class AbsenceEmployeePage implements OnInit {
 
   ngOnInit() {
     this.loadUserData();
-    this.loadRecentRequests();
+  }
+
+  ngOnDestroy() {
+    if (this.requestsSubscription) {
+      this.requestsSubscription.unsubscribe();
+    }
   }
 
   async loadUserData() {
-    await this.authService
-      .getCurrentUser()
-      .subscribe((user) => (this.currentUser = user));
-    console.log(this.currentUser);
-  }
-
-  loadRecentRequests() {
-    // Assuming you have a method in your service to get requests by employee ID
-    if (this.currentUser?.uid) {
-      this.absenceService.getRequestsByEmployee(this.currentUser.uid).subscribe(
-        (requests) => {
-          this.recentRequests = requests;
-        },
-        (error) => {
-          console.error('Error loading recent requests:', error);
-        }
-      );
-    }
+    this.authService.getCurrentUser().subscribe((user) => {
+      this.currentUser = user;
+      console.log('Current user:', user);
+      if (user?.uid) {
+        // Subscribe to real-time updates for the employee's requests
+        this.requestsSubscription = this.absenceService
+          .getRequestsByEmployee(user.uid)
+          .subscribe(
+            (requests) => {
+              this.recentRequests = requests;
+            },
+            (error) => {
+              console.error('Error loading recent requests:', error);
+              this.showToast('Error loading requests', 'danger');
+            }
+          );
+      }
+    });
   }
 
   async submitRequest() {
     if (this.absenceForm.valid && !this.isSubmitting) {
       this.isSubmitting = true;
 
-      const requestData = {
+      const requestData: Partial<AbsenceRequest> = {
         ...this.absenceForm.value,
         employeeId: this.currentUser.uid,
         employeeName: this.currentUser.displayName || 'Employee',
         status: 'pending',
         submissionDate: new Date().toISOString(),
       };
-      console.log(requestData);
+
       try {
-        await this.absenceService.createRequest(requestData);
-        await this.showToast('Request submitted successfully', 'success');
-        this.absenceForm.reset();
-        this.loadRecentRequests();
+        const success = await this.absenceService.createRequest(requestData);
+        if (success) {
+          await this.showToast('Request submitted successfully', 'success');
+          this.absenceForm.reset();
+          this.selectedView = 'list'; // Switch to list view after successful submission
+        } else {
+          await this.showToast('Failed to submit request', 'danger');
+        }
       } catch (error) {
         console.error('Error submitting request:', error);
         await this.showToast('Failed to submit request', 'danger');
@@ -508,7 +523,6 @@ export class AbsenceEmployeePage implements OnInit {
     await toast.present();
   }
 
-  // Validators
   validateDates() {
     const start = new Date(this.absenceForm.get('startDate')?.value);
     const end = new Date(this.absenceForm.get('endDate')?.value);
@@ -517,8 +531,6 @@ export class AbsenceEmployeePage implements OnInit {
       this.absenceForm.get('endDate')?.setErrors({ invalidRange: true });
     }
   }
-  selectedView: 'list' | 'new' = 'list';
-  // ... rest of the component code remains the same ...
 
   getCurrentAndUpcomingRequests() {
     const today = new Date();

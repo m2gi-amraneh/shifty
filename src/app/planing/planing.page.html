@@ -1,123 +1,178 @@
-<!-- planning.page.html -->
-<ion-header [translucent]="true">
-  <ion-toolbar class="header-toolbar">
-    <ion-title>Weekly Schedule</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="bg-light">
+  <!-- Header -->
+  <ion-header class="ion-no-border">
+    <ion-toolbar color="primary" class="custom-toolbar">
+      <ion-title>Weekly Schedule</ion-title>
+      <ion-buttons slot="end">
+        <ion-button (click)="openAddShiftModal(selectedDay)">
+          <ion-icon name="add-circle" class="text-2xl"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-segment [(ngModel)]="selectedDay" (ionChange)="onSegmentChange()">
-    <ion-segment-button *ngFor="let day of weekDays" [value]="day">
-      {{ day | slice: 0: 3 }}
-    </ion-segment-button>
-  </ion-segment>
+  <!-- Day Selector -->
+  <div class="day-selector px-4 py-3 bg-white shadow-sm">
+    <ion-segment
+      [(ngModel)]="selectedDay"
+      (ionChange)="onSegmentChange()"
+      color="primary"
+    >
+      <ion-segment-button
+        *ngFor="let day of weekDays"
+        [value]="day"
+        class="day-segment-button"
+      >
+        {{ day | slice:0:3 }}
+      </ion-segment-button>
+    </ion-segment>
+  </div>
 
-  <swiper-container #swiper (swiperslidechange)="onSlideChange($event)">
+  <!-- Swiper Container -->
+  <swiper-container
+    #swiper
+    (swiperslidechange)="onSlideChange($event)"
+    class="h-full"
+  >
     <swiper-slide *ngFor="let day of weekDays">
-      <div class="day-container">
-        <ion-list>
-          <ion-item-sliding *ngFor="let shift of currentDayShifts">
-            <ion-item>
-              <ion-label>
-                <h2>{{ shift.startTime}} - {{ shift.endTime }}</h2>
-                <p>
-                  <ion-chip>
-                    {{ shift.employee.name }} - {{ shift.role }}
+      <div class="day-container p-4">
+        <!-- Empty State -->
+        <ng-container *ngIf="currentDayShifts.length === 0">
+          <div class="empty-state text-center py-8">
+            <ion-icon
+              name="calendar-outline"
+              class="text-6xl text-gray-400 mb-4"
+            ></ion-icon>
+            <p class="text-gray-600">No shifts scheduled for {{ day }}</p>
+          </div>
+        </ng-container>
+
+        <!-- Shifts List -->
+        <ion-list
+          *ngIf="currentDayShifts.length > 0"
+          lines="none"
+          class="shift-list"
+        >
+          <ion-item-sliding
+            *ngFor="let shift of currentDayShifts"
+            class="shift-item"
+          >
+            <ion-item class="shift-card">
+              <ion-label class="shift-content">
+                <h2 class="shift-employee">{{ shift.employee.name }}</h2>
+                <div class="shift-details">
+                  <p class="shift-time">
+                    {{ shift.startTime }} - {{ shift.endTime }}
+                  </p>
+                  <ion-chip color="secondary" class="shift-role">
+                    {{ shift.role }}
                   </ion-chip>
-                </p>
+                </div>
               </ion-label>
             </ion-item>
-            <ion-item-options>
+            <ion-item-options side="end">
               <ion-item-option color="danger" (click)="removeShift(shift.id!)">
                 <ion-icon name="trash" slot="icon-only"></ion-icon>
               </ion-item-option>
             </ion-item-options>
           </ion-item-sliding>
         </ion-list>
-
-        <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-          <ion-fab-button (click)="openAddShiftModal(day)">
-            <ion-icon name="add"></ion-icon>
-          </ion-fab-button>
-        </ion-fab>
       </div>
     </swiper-slide>
   </swiper-container>
+
+  <!-- Floating Add Button -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button color="primary" (click)="openAddShiftModal(selectedDay)">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
 </ion-content>
 
 <!-- Add Shift Modal -->
-<ion-modal [isOpen]="showAddShiftModal">
+<ion-modal [isOpen]="showAddShiftModal" class="add-shift-modal">
   <ng-template>
     <ion-header>
-      <ion-toolbar>
-        <ion-title>Add Shift</ion-title>
-        <ion-buttons slot="end">
-          <ion-button (click)="closeModal()">Close</ion-button>
+      <ion-toolbar color="primary">
+        <ion-buttons slot="start">
+          <ion-button (click)="closeModal()">
+            <ion-icon name="close"></ion-icon>
+          </ion-button>
         </ion-buttons>
+        <ion-title>Add New Shift</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content class="ion-padding">
-      <!-- Employee Selection -->
-      <ion-item>
-        <ion-label>Employee</ion-label>
-        <ion-select
-          [(ngModel)]="selectedEmployee"
-          interface="action-sheet"
-          placeholder="Select Employee"
-        >
-          <ion-select-option
-            *ngFor="let employee of employees$ | async"
-            [value]="employee"
+      <div class="modal-content">
+        <!-- Employee Selection -->
+        <ion-item class="mb-4 rounded-lg">
+          <ion-label position="stacked">Employee</ion-label>
+          <ion-select
+            [(ngModel)]="selectedEmployee"
+            interface="action-sheet"
+            placeholder="Select Employee"
           >
-            {{ employee.name }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
+            <ion-select-option
+              *ngFor="let employee of employees$ | async"
+              [value]="employee"
+            >
+              {{ employee.name }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
 
-      <!-- Role Selection -->
-      <ion-item>
-        <ion-label>Role</ion-label>
-        <ion-select
-          [(ngModel)]="newShift.role"
-          interface="action-sheet"
-          placeholder="Select Role"
+        <!-- Role Selection -->
+        <ion-item class="mb-4 rounded-lg">
+          <ion-label position="stacked">Role</ion-label>
+          <ion-select
+            [(ngModel)]="newShift.role"
+            interface="action-sheet"
+            placeholder="Select Role"
+          >
+            <ion-select-option
+              *ngFor="let role of roles$ | async"
+              [value]="role.name"
+            >
+              {{ role.name }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <!-- Time Selection -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <ion-item class="rounded-lg">
+            <ion-label position="stacked">Start Time</ion-label>
+            <ion-datetime
+              presentation="time"
+              [(ngModel)]="newShift.startTime"
+              placeholder="Start"
+            >
+            </ion-datetime>
+          </ion-item>
+
+          <ion-item class="rounded-lg">
+            <ion-label position="stacked">End Time</ion-label>
+            <ion-datetime
+              presentation="time"
+              [(ngModel)]="newShift.endTime"
+              placeholder="End"
+            >
+            </ion-datetime>
+          </ion-item>
+        </div>
+
+        <!-- Save Button -->
+        <ion-button
+          expand="block"
+          color="primary"
+          (click)="saveShift()"
+          [disabled]="!isShiftValid()"
+          class="mt-4 rounded-lg"
         >
-          <ion-select-option *ngFor="let role of roles$ | async">
-            {{ role.name }}
-          </ion-select-option>
-        </ion-select>
-      </ion-item>
-
-      <!-- Start Time -->
-      <ion-item>
-        <ion-label>Start Time</ion-label>
-        <ion-datetime
-          presentation="time"
-          [(ngModel)]="newShift.startTime"
-          placeholder="Select Start Time"
-        ></ion-datetime>
-      </ion-item>
-
-      <!-- End Time -->
-      <ion-item>
-        <ion-label>End Time</ion-label>
-        <ion-datetime
-          presentation="time"
-          [(ngModel)]="newShift.endTime"
-          placeholder="Select End Time"
-        ></ion-datetime>
-      </ion-item>
-
-      <!-- Save Button -->
-      <ion-button
-        expand="block"
-        (click)="saveShift()"
-        [disabled]="!isShiftValid()"
-        class="save-button"
-      >
-        Save Shift
-      </ion-button>
+          Save Shift
+        </ion-button>
+      </div>
     </ion-content>
   </ng-template>
 </ion-modal>
