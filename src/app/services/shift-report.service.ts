@@ -11,13 +11,13 @@ import {
 import { Observable, from } from 'rxjs';
 import { map } from 'rxjs/operators';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { Timestamp } from '@angular/fire/firestore';
 
 export interface ShiftReport {
   shiftId: string;
   employeeId: string;
-  checkInTime: Date;
-  checkOutTime?: Date;
+  badgeInTime: Date;
+  badgeOutTime?: Date;
   totalHours: number;
 }
 
@@ -25,9 +25,8 @@ export interface ShiftReport {
   providedIn: 'root',
 })
 export class ShiftReportService {
-  constructor(private firestore: Firestore) {}
+  constructor(private firestore: Firestore) { }
 
-  // Fetch shifts for a specific employee within a date range
   getShiftsByDateRange(
     employeeId: string,
     startDate: Date,
@@ -46,35 +45,36 @@ export class ShiftReportService {
     return from(getDocs(q)).pipe(
       map((snapshot) =>
         snapshot.docs.map((doc) => {
-          const data = doc.data() as any;
+          const data = doc.data();
+          const badgeInTime = (data['badgeInTime'] as Timestamp).toDate();
+          const badgeOutTime = data['badgeOutTime']
+            ? (data['badgeOutTime'] as Timestamp).toDate()
+            : undefined;
+
           return {
-            id: doc.id,
-            ...data,
-            totalHours: this.calculateShiftHours(
-              data.badgeInTime,
-              data.badgeOutTime
-            ),
+            shiftId: doc.id,
+            employeeId: data['employeeId'],
+            badgeInTime,
+            badgeOutTime,
+            totalHours: this.calculateShiftHours(badgeInTime, badgeOutTime),
           };
         })
       )
     );
   }
 
-  // Calculate total hours for a shift
   private calculateShiftHours(checkIn: Date, checkOut?: Date): number {
     if (!checkOut) return 0;
-    const diffMs = new Date(checkOut).getTime() - new Date(checkIn).getTime();
-    return diffMs / (1000 * 60 * 60); // Convert to hours
+    const diffMs = checkOut.getTime() - checkIn.getTime();
+    return diffMs / (1000 * 60 * 60);
   }
 
-  // Generate PDF Report
   async generatePdfReport(
     employeeId: string,
     startDate: Date,
     endDate: Date,
     shifts: ShiftReport[]
   ): Promise<void> {
-    // Create PDF
     const doc = new jsPDF();
 
     // Report Header
@@ -102,11 +102,11 @@ export class ShiftReportService {
     y += 10;
     let totalReportHours = 0;
     shifts.forEach((shift) => {
-      doc.text(new Date(shift.checkInTime).toLocaleDateString(), 10, y);
-      doc.text(new Date(shift.checkInTime).toLocaleTimeString(), 50, y);
+      doc.text(shift.badgeInTime.toLocaleDateString(), 10, y);
+      doc.text(shift.badgeInTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 50, y);
       doc.text(
-        shift.checkOutTime
-          ? new Date(shift.checkOutTime).toLocaleTimeString()
+        shift.badgeOutTime
+          ? shift.badgeOutTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           : 'Not Checked Out',
         90,
         y
@@ -123,7 +123,7 @@ export class ShiftReportService {
 
     // Save PDF
     doc.save(
-      `shift_report_${startDate.toISOString()}_${endDate.toISOString()}.pdf`
+      `shift_report_${employeeId}_${startDate.toISOString()}_${endDate.toISOString()}.pdf`
     );
   }
 }

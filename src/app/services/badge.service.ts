@@ -10,9 +10,10 @@ import {
   deleteDoc,
   doc,
   updateDoc,
+  collectionData,
 } from '@angular/fire/firestore';
 import { Observable, from } from 'rxjs';
-import { Timestamp } from 'firebase/firestore';
+import { orderBy, Timestamp } from 'firebase/firestore';
 
 export interface BadgedShift {
   id?: string;
@@ -164,7 +165,15 @@ export class BadgeService {
       )
     );
   }
-
+  getBadgedShiftsRealtime(employeeId: string): Observable<BadgedShift[]> {
+    return collectionData(
+      query(
+        collection(this.firestore, 'badgedShifts'),
+        where('employeeId', '==', employeeId),
+        orderBy('badgeInTime', 'desc')
+      )
+    ) as Observable<BadgedShift[]>;
+  }
   // Complete a badged shift (check out)
   async completeBadgedShift(badgeId: string): Promise<void> {
     const badgeDoc = doc(this.firestore, 'badgedShifts', badgeId);

@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { BadgeService, BadgedShift } from '../services/badge.service';
@@ -8,11 +8,12 @@ import { ScheduleService } from '../services/schedule.service';
 import { ToastController } from '@ionic/angular';
 import { firstValueFrom, Subscription, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { Timestamp } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-employee-badge',
   standalone: true,
-  imports: [CommonModule, IonicModule, ReactiveFormsModule],
+  imports: [CommonModule, IonicModule, ReactiveFormsModule, DatePipe],
   template: `
     <ion-header>
       <ion-toolbar>
@@ -96,7 +97,7 @@ import { map } from 'rxjs/operators';
               <ion-item>
                 <ion-label>
                   <h2>Check-in Time</h2>
-                  <p>{{ currentBadgedShift.badgeInTime | date:'medium' }}</p>
+                  <p>{{ currentBadgedShift.badgeInTime | date: 'short' }}</p>
                 </ion-label>
               </ion-item>
               <ion-item>
@@ -195,6 +196,10 @@ export class EmployeeBadgePage implements OnInit, OnDestroy {
         ))
       )
       .subscribe(shift => {
+        if (shift && shift.badgeInTime instanceof Timestamp) {
+          // Ensure Firestore Timestamp is converted to Date
+          shift.badgeInTime = shift.badgeInTime.toDate();
+        }
         this.currentBadgedShift = shift || null;
       });
   }
