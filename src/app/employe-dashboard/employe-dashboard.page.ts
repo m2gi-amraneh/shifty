@@ -15,11 +15,11 @@ import {
   calendarOutline,
   documentOutline,
   peopleOutline,
-  qrCodeOutline,
+  personOutline,
 } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 addIcons({
-  qrCodeOutline,
+  personOutline,
   peopleOutline,
   calendarNumberOutline,
   documentOutline,
@@ -34,7 +34,7 @@ addIcons({
   imports: [CommonModule, FormsModule, IonicModule, RouterModule],
 })
 export class EmployeDashboardPage implements OnInit {
-  constructor() {}
+  constructor() { }
 
-  ngOnInit() {}
+  ngOnInit() { }
 }

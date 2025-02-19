@@ -209,4 +209,15 @@ export class BadgeService {
       return badgeDate >= today && badgeDate < tomorrow;
     });
   }
+  async getEmployeeIdFromInput(input: string): Promise<string | null> {
+    const userRef = collection(this.firestore, 'users');
+    const q = query(userRef, where('badgeCode', '==', input));
+
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+      return querySnapshot.docs[0].id; // Return the employee UID
+    }
+
+    return input; // Assume input is already an Employee ID
+  }
 }

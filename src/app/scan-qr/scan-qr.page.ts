@@ -1,3 +1,4 @@
+import { UsersService } from './../services/users.service';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
@@ -7,7 +8,7 @@ import { PlanningService, Shift } from '../services/planning.service';
 import { ScheduleService } from '../services/schedule.service';
 import { ToastController } from '@ionic/angular';
 import { firstValueFrom, Subscription, combineLatest } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 import { Timestamp } from '@angular/fire/firestore';
 
 @Component({
@@ -26,7 +27,7 @@ import { Timestamp } from '@angular/fire/firestore';
         <ion-list>
           <ion-item>
             <ion-label position="stacked">Employee ID</ion-label>
-            <ion-input type="text" formControlName="employeeId"></ion-input>
+            <ion-input type="text" formControlName="badgeCode"></ion-input>
           </ion-item>
         </ion-list>
 
@@ -128,21 +129,30 @@ export class EmployeeBadgePage implements OnInit, OnDestroy {
     private badgeService: BadgeService,
     private planningService: PlanningService,
     private scheduleService: ScheduleService,
-    private toastController: ToastController
+    private toastController: ToastController, private UsersService: UsersService
   ) {
     this.badgeForm = this.fb.group({
-      employeeId: ['', [Validators.required]],
+      badgeCode: ['', [Validators.required]],
       selectedShiftId: ['', [Validators.required]]
     });
   }
 
   ngOnInit() {
-    this.badgeForm.get('employeeId')?.valueChanges.subscribe(employeeId => {
-      if (employeeId) {
-        this.employeeId = employeeId;
+    this.badgeForm.get('badgeCode')?.valueChanges.pipe(
+      switchMap(badgeCode => this.UsersService.getUserByBadgeCode(badgeCode))
+    ).subscribe(user => {
+      if (user) {
+        // User found, proceed with badging logic
+        this.employeeId = user.id;
         this.checkAvailability();
-        this.loadAvailableShifts(employeeId);
-        this.checkCurrentShift(employeeId);
+        this.loadAvailableShifts(this.employeeId);
+        this.checkCurrentShift(this.employeeId);
+      } else {
+        // User not found, handle error
+        this.employeeId = null;
+        this.availableShifts = [];
+        this.currentBadgedShift = null;
+        this.showToast('Invalid Badge Code');
       }
     });
   }
@@ -225,7 +235,7 @@ export class EmployeeBadgePage implements OnInit, OnDestroy {
     if (!this.canBadge() || this.isProcessing) return;
 
     this.isProcessing = true;
-    const employeeId = this.badgeForm.get('employeeId')?.value;
+    const employeeId = this.employeeId!;
     const selectedShiftId = this.badgeForm.get('selectedShiftId')?.value;
 
     try {

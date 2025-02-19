@@ -74,7 +74,7 @@ export class AuthService {
           userCredential.user?.uid,
           name,
           email,
-          'employee'
+          'employee',
         );
       }
     );
@@ -87,24 +87,28 @@ export class AuthService {
     email: string,
     role: string
   ) {
+    const badgeCode = this.generateBadgeCode(); // Generate a short unique badge code
+
     const userRef = doc(this.firestore, `users/${uid}`);
-    return setDoc(userRef, { name, email, role }); // Save name to Firestore
+    return setDoc(userRef, { name, email, role, badgeCode }); // Save name to Firestore
   }
 
   // Update checkAndAssignRole to include name
-  private async checkAndAssignRole(
-    uid: string,
-    name: string,
-    email: string
-  ): Promise<void> {
+  private async checkAndAssignRole(uid: string, name: string, email: string): Promise<void> {
     const userRef = doc(this.firestore, `users/${uid}`);
     const userDoc = await getDoc(userRef);
 
     if (!userDoc.exists()) {
-      // New user, assign "employee" role and save name
-      await setDoc(userRef, { name, email, role: 'employee' });
+      const badgeCode = this.generateBadgeCode(); // Generate a short unique badge code
+      await setDoc(userRef, { name, email, role: 'employee', badgeCode });
     }
   }
+
+  // Generate a unique badge code
+  private generateBadgeCode(): string {
+    return Math.random().toString(36).substring(2, 8).toUpperCase(); // Example: "X4Y9Z2"
+  }
+
 
   // Update social login methods to include name
   async signInWithGoogle(): Promise<any> {
@@ -158,9 +162,25 @@ export class AuthService {
 
   // Get current user as Observable
 
-  getCurrentUser() {
-    return this.userSubject.asObservable();
+  getCurrentUser(): Observable<any> {
+    return new Observable((observer) => {
+      onAuthStateChanged(this.auth, async (user) => {
+        if (user) {
+          const userRef = doc(this.firestore, `users/${user.uid}`);
+          const userDoc = await getDoc(userRef);
+
+          if (userDoc.exists()) {
+            observer.next({ ...user, ...userDoc.data() }); // Merge Firebase Auth and Firestore data
+          } else {
+            observer.next(user); // Return basic auth user data
+          }
+        } else {
+          observer.next(null);
+        }
+      });
+    });
   }
+
 
   // Get current user ID
   getCurrentUserId(): string | null {

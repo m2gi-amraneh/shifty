@@ -1,7 +1,9 @@
 import { Routes } from '@angular/router';
-import { AuthGuard } from './guards/auth.guard';
 import { LoginPage } from './login/login.page';
 import { RegisterPage } from './register/register.page';
+import { AdminGuard } from './guards/admin.guard';
+import { AuthGuard } from './guards/auth.guard';
+import { EmployeeGuard } from './guards/employee.guard';
 
 export const routes: Routes = [
   {
@@ -14,13 +16,13 @@ export const routes: Routes = [
     path: 'register',
     component: RegisterPage,
   },
-
   {
     path: 'admin-dashboard',
     loadComponent: () =>
       import('./admin-dashboard/admin-dashboard.page').then(
         (m) => m.AdminDashboardpage
       ),
+    canActivate: [AuthGuard, AdminGuard], // Apply guards
   },
   {
     path: 'employee-dashboard',
@@ -28,11 +30,14 @@ export const routes: Routes = [
       import('./employe-dashboard/employe-dashboard.page').then(
         (m) => m.EmployeDashboardPage
       ),
+    canActivate: [AuthGuard, EmployeeGuard], // Apply guards
   },
+  // ... other routes with guards
   {
     path: 'scan-qr',
     loadComponent: () =>
       import('./scan-qr/scan-qr.page').then((m) => m.EmployeeBadgePage),
+    canActivate: [AuthGuard, AdminGuard],
   },
   {
     path: 'manage-employees',
@@ -40,11 +45,13 @@ export const routes: Routes = [
       import('./manage-employees/manage-employees.page').then(
         (m) => m.ManageEmployeesPage
       ),
+    canActivate: [AuthGuard, AdminGuard],
   },
   {
     path: 'planing',
     loadComponent: () =>
       import('./planing/planing.page').then((m) => m.PlanningPage),
+    canActivate: [AuthGuard, AdminGuard],
   },
   {
     path: 'manage-positions',
@@ -52,6 +59,7 @@ export const routes: Routes = [
       import('./manage-positions/manage-positions.page').then(
         (m) => m.ManagePositionsPage
       ),
+    canActivate: [AuthGuard, AdminGuard],
   },
   {
     path: 'abcance-admin',
@@ -59,6 +67,7 @@ export const routes: Routes = [
       import('./abcance-admin/abcance-admin.page').then(
         (m) => m.AbcanceAdminPage
       ),
+    canActivate: [AuthGuard, AdminGuard],
   },
   {
     path: 'absence-employee',
@@ -66,6 +75,7 @@ export const routes: Routes = [
       import('./absence-employee/absence-employee.page').then(
         (m) => m.AbsenceEmployeePage
       ),
+    canActivate: [AuthGuard, EmployeeGuard],
   },
   {
     path: 'closing-periods',
@@ -73,6 +83,7 @@ export const routes: Routes = [
       import('./closing-periods/closing-periods.page').then(
         (m) => m.ClosingDaysComponent
       ),
+    canActivate: [AuthGuard, AdminGuard],
   },
   {
     path: 'employee-planing-view',
@@ -80,11 +91,13 @@ export const routes: Routes = [
       import('./employee-planing-view/employee-planing-view.page').then(
         (m) => m.EmployeePlanningViewPage
       ),
+    canActivate: [AuthGuard, EmployeeGuard],
   },
   {
     path: 'qr-scan',
     loadComponent: () =>
       import('./qr-scan/qr-scan.page').then((m) => m.QrScanPage),
+    canActivate: [AuthGuard, EmployeeGuard],
   },
   {
     path: 'badged-shifts',
@@ -92,10 +105,13 @@ export const routes: Routes = [
       import('./badged-shifts/badged-shifts.page').then(
         (m) => m.BadgedShiftsPage
       ),
+    canActivate: [AuthGuard, EmployeeGuard],
   },
   {
     path: 'shift-report',
     loadComponent: () =>
       import('./shift-report/shift-report.page').then((m) => m.ShiftReportPage),
+    canActivate: [AuthGuard, EmployeeGuard],
   },
+
 ];

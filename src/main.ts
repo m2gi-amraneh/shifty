@@ -13,6 +13,7 @@ import {
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { enableProdMode } from '@angular/core';
+import { provideAnimations } from '@angular/platform-browser/animations';
 import { environment } from './environments/environment';
 import { provideMessaging, getMessaging } from '@angular/fire/messaging';
 
@@ -42,7 +43,7 @@ bootstrapApplication(AppComponent, {
   providers: [
     // Initialize Firebase (ensure it's done before accessing Firebase services)
     provideFirebaseApp(() => initializeApp(firebaseConfig)),
-
+    provideAnimations(),
     // Provide Firebase services (Auth, Firestore, Database, etc.)
     provideAuth(() => getAuth()),
     provideFirestore(() => getFirestore()), // Add Firestore provider

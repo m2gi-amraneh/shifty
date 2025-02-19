@@ -1,12 +1,13 @@
-// closing-days.component.ts
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, ModalController, AlertController } from '@ionic/angular';
 import {
   ClosingDaysService,
   ClosingPeriod,
 } from '../services/closing-periods.service';
+import { ClosingPeriodModalComponent } from '../modals/closing-period-modal.component';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-closing-days',
@@ -14,75 +15,133 @@ import {
   imports: [CommonModule, FormsModule, IonicModule],
   template: `
     <ion-header>
-      <ion-toolbar>
+      <ion-toolbar color="primary">
         <ion-title>Manage Closing Days</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="openModal()">
+            <ion-icon slot="icon-only" name="add"></ion-icon>
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
-      <ion-list>
-        <ion-item *ngFor="let period of closingPeriods">
-          <ion-label>
-            <h2>{{ period.description }}</h2>
-            <p>{{ period.startDate | date }} - {{ period.endDate | date }}</p>
-          </ion-label>
-          <ion-button (click)="editPeriod(period)">Edit</ion-button>
-          <ion-button color="danger" (click)="deletePeriod(period.id)"
-            >Delete</ion-button
-          >
-        </ion-item>
-      </ion-list>
-
-      <ion-item>
-        <ion-label position="stacked">Description</ion-label>
-        <ion-input [(ngModel)]="newPeriod.description"></ion-input>
-      </ion-item>
-      <ion-item>
-        <ion-label position="stacked">Start Date</ion-label>
-        <ion-datetime [(ngModel)]="newPeriod.startDate"></ion-datetime>
-      </ion-item>
-      <ion-item>
-        <ion-label position="stacked">End Date</ion-label>
-        <ion-datetime [(ngModel)]="newPeriod.endDate"></ion-datetime>
-      </ion-item>
-      <ion-button expand="full" (click)="savePeriod()">Save</ion-button>
+    <ion-content class="ion-padding">
+      <ion-grid>
+        <ion-row>
+          <ion-col size="12" size-md="6" size-lg="4" *ngFor="let period of closingPeriods">
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>{{ period.description }}</ion-card-title>
+                <ion-card-subtitle>
+                  {{ period.startDate | date }} - {{ period.endDate | date }}
+                </ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <ion-button expand="full" (click)="openModal(period)">Edit</ion-button>
+                <ion-button expand="full" color="danger" (click)="deletePeriod(period.id)">Delete</ion-button>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
     </ion-content>
   `,
-})
-export class ClosingDaysComponent {
-  closingPeriods: ClosingPeriod[] = [];
-  newPeriod: ClosingPeriod = { startDate: '', endDate: '', description: '' };
-  isEditing = false;
-
-  constructor(private closingDaysService: ClosingDaysService) {
-    this.loadClosingPeriods();
-  }
-
-  async loadClosingPeriods() {
-    this.closingPeriods =
-      await this.closingDaysService.getCurrentClosingPeriods();
-  }
-
-  editPeriod(period: ClosingPeriod) {
-    this.newPeriod = { ...period };
-    this.isEditing = true;
-  }
-
-  async savePeriod() {
-    if (this.isEditing) {
-      await this.closingDaysService.updateClosingPeriod(this.newPeriod);
-    } else {
-      await this.closingDaysService.addClosingPeriod(this.newPeriod);
+  styles: [`
+    ion-card {
+      margin: 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
-    this.newPeriod = { startDate: '', endDate: '', description: '' };
-    this.isEditing = false;
-    this.loadClosingPeriods();
+
+    ion-card-header {
+      background: var(--ion-color-primary);
+      color: white;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+    }
+
+    ion-card-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    ion-card-subtitle {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    ion-button {
+      margin-top: 8px;
+    }
+
+    ion-fab-button {
+      --background: var(--ion-color-primary);
+      --background-activated: var(--ion-color-primary-shade);
+    }
+  `],
+})
+export class ClosingDaysComponent implements OnInit, OnDestroy {
+  closingPeriods: ClosingPeriod[] = [];
+  private closingPeriodsSubscription: Subscription | undefined;
+
+  constructor(
+    private closingDaysService: ClosingDaysService,
+    private modalController: ModalController,
+    private alertController: AlertController
+  ) { }
+
+  ngOnInit() {
+    this.closingPeriodsSubscription = this.closingDaysService.closingPeriods$.subscribe(
+      (periods) => {
+        this.closingPeriods = periods;
+      }
+    );
+  }
+
+  ngOnDestroy() {
+    if (this.closingPeriodsSubscription) {
+      this.closingPeriodsSubscription.unsubscribe();
+    }
+  }
+
+  async openModal(period?: ClosingPeriod) {
+    const modal = await this.modalController.create({
+      component: ClosingPeriodModalComponent,
+      componentProps: {
+        period: period ? { ...period } : { startDate: '', endDate: '', description: '' },
+      },
+    });
+
+    await modal.present();
+    const { data, role } = await modal.onWillDismiss();
+
+    if (role === 'save') {
+      if (data.id) {
+        await this.closingDaysService.updateClosingPeriod(data);
+      } else {
+        await this.closingDaysService.addClosingPeriod(data);
+      }
+    }
   }
 
   async deletePeriod(id?: string) {
     if (id) {
-      await this.closingDaysService.deleteClosingPeriod(id);
-      this.loadClosingPeriods();
+      const alert = await this.alertController.create({
+        header: 'Confirm Delete',
+        message: 'Are you sure you want to delete this closing period?',
+        buttons: [
+          {
+            text: 'Cancel',
+            role: 'cancel',
+          },
+          {
+            text: 'Delete',
+            handler: async () => {
+              await this.closingDaysService.deleteClosingPeriod(id);
+            },
+          },
+        ],
+      });
+      await alert.present();
     }
   }
 }
