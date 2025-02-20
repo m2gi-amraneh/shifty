@@ -29,7 +29,7 @@ addIcons({
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ion-header>
-      <ion-toolbar color="primary">
+      <ion-toolbar class="header-toolbar">
         <ion-title>Shift Hours Report</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -77,36 +77,9 @@ addIcons({
           </ion-card-content>
         </ion-card>
 
-        <!-- Shifts List -->
-        <ion-list *ngIf="shifts$ | async as shifts">
-          <ion-list-header>
-            <ion-label>Shift Details</ion-label>
-          </ion-list-header>
-
-
-
-            <ion-item *ngFor="let shift of shifts" class="shift-item">
-              <ion-label>
-                <h2 class="shift-id">{{ shift.shiftId }}</h2>
-                <div class="time-container">
-                  <div class="time-block">
-                    <ion-icon name="time-outline" color="primary"></ion-icon>
-                    <span>{{ formatTimestamp(shift.badgeInTime) }}</span>
-                    <ion-icon name="arrow-forward-outline" color="medium"></ion-icon>
-                    <span>{{ formatTimestamp(shift.badgeOutTime) }}</span>
-                  </div>
-                  <ion-badge color="primary" class="hours-badge">
-                    {{ shift.totalHours | number:'1.1-1' }} hrs
-                  </ion-badge>
-                </div>
-              </ion-label>
-            </ion-item>
-        </ion-list>
-
         <!-- Generate Report Button -->
         <ion-button
           expand="block"
-          color="primary"
           class="generate-button"
           (click)="generateReport()"
           [disabled]="!(shifts$ | async)?.length"
@@ -118,102 +91,337 @@ addIcons({
     </ion-content>
   `,
   styles: [`
-    .custom-segment {
-      margin: 16px 0;
-      --background: var(--ion-color-light);
-      border-radius: 8px;
-    }
+    /* Base styles */
+.custom-content {
+  --background: #f5faff;
+}
 
-    .date-navigation {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin: 16px 0;
-      padding: 0 8px;
-    }
+.header-toolbar {
+  --background: linear-gradient(135deg, #3cd1db 0%, #66a6ff 100%);
+  --color: white;
+}
 
-    .date-display {
-      text-align: center;
-      flex: 1;
-    }
+/* Segment styling */
+.custom-segment {
+  margin: 16px 0;
+  --background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(102, 166, 255, 0.1);
 
-    .date-range {
-      font-size: 1.1em;
-      font-weight: 500;
-      color: var(--ion-color-dark);
-    }
+  ion-segment-button {
+    --color: #66a6ff;
+    --color-checked: white;
+    --background-checked: linear-gradient(135deg, #3cd1db 0%, #66a6ff 100%);
+    --indicator-color: transparent;
+    font-weight: 500;
+    border-radius: 8px;
+    margin: 3px;
+    transition: all 0.3s ease;
+  }
+}
 
-    .summary-card {
-      margin: 16px 0;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
+/* Date navigation */
+.date-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0;
+  padding: 10px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(102, 166, 255, 0.1);
+}
 
-    .summary-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      text-align: center;
-    }
+.nav-button {
+  --color: #66a6ff;
+  --background-hover: rgba(102, 166, 255, 0.1);
+  --border-radius: 50%;
+  width: 40px;
+  height: 40px;
+}
 
-    .summary-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+.date-display {
+  text-align: center;
+  flex: 1;
+}
 
-    .summary-item .label {
-      font-size: 0.9em;
-      color: var(--ion-color-medium);
-    }
+.date-range {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: #3b4863;
+  letter-spacing: 0.5px;
+}
 
-    .summary-item .value {
-      font-size: 1.5em;
-      font-weight: 600;
-      color: var(--ion-color-primary);
-    }
+/* Summary card */
+.summary-card {
+  margin: 16px 0;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(102, 166, 255, 0.15);
+  background: white;
+  overflow: hidden;
+}
 
-    .shift-item {
-      --padding-start: 16px;
-      --padding-end: 16px;
-      --padding-top: 12px;
-      --padding-bottom: 12px;
-    }
+.summary-header {
+  background: linear-gradient(135deg, rgba(60, 209, 219, 0.1) 0%, rgba(102, 166, 255, 0.1) 100%);
+  padding: 16px;
+  border-bottom: 1px solid rgba(102, 166, 255, 0.1);
 
-    .shift-id {
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: var(--ion-color-dark);
-    }
+  h2 {
+    margin: 0;
+    font-size: 1.2em;
+    color: #66a6ff;
+    font-weight: 600;
+  }
+}
 
-    .time-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 4px;
-    }
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 8px;
+}
 
-    .time-block {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--ion-color-medium);
-    }
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+}
 
-    .hours-badge {
-      padding: 6px 12px;
-      border-radius: 12px;
-    }
+.icon-container {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(60, 209, 219, 0.15) 0%, rgba(102, 166, 255, 0.15) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    .generate-button {
-      margin-top: 24px;
-    }
+  ion-icon {
+    font-size: 24px;
+    color: #66a6ff;
+  }
+}
 
-    ion-item-divider {
-      --background: var(--ion-color-light);
-      --padding-start: 16px;
-      font-weight: 500;
+.text-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-item .label {
+  font-size: 0.9em;
+  color: #8c9bb5;
+  margin-bottom: 4px;
+}
+
+.summary-item .value {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: #66a6ff;
+}
+
+/* Shift grouping */
+.shift-group {
+  margin-bottom: 24px;
+}
+
+.date-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  margin: 16px 0 8px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(102, 166, 255, 0.1);
+  font-weight: 600;
+  color: #3b4863;
+
+  ion-icon {
+    margin-right: 8px;
+    color: #66a6ff;
+  }
+}
+
+.day-total-badge {
+  margin-left: auto;
+  --background: linear-gradient(135deg, #3cd1db 0%, #66a6ff 100%);
+  --color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+/* Shift card */
+.shift-card {
+  margin: 10px 0;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(102, 166, 255, 0.1);
+  background: white;
+  overflow: hidden;
+  border-left: 3px solid #66a6ff;
+}
+
+.shift-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.shift-id {
+  font-weight: 600;
+  margin: 0;
+  color: #3b4863;
+  font-size: 1em;
+}
+
+.hours-badge {
+  --background: linear-gradient(135deg, #3cd1db 0%, #66a6ff 100%);
+  --color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.time-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.badge-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  flex: 1;
+  border-radius: 8px;
+
+  &.in {
+    background-color: rgba(60, 209, 219, 0.08);
+    ion-icon {
+      color: #3cd1db;
     }
+  }
+
+  &.out {
+    background-color: rgba(102, 166, 255, 0.08);
+    ion-icon {
+      color: #66a6ff;
+    }
+  }
+
+  ion-icon {
+    font-size: 20px;
+  }
+}
+
+.time-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.time-label {
+  font-size: 0.8em;
+  color: #8c9bb5;
+}
+
+.time-value {
+  font-weight: 600;
+  color: #3b4863;
+}
+
+.time-divider {
+  display: flex;
+  align-items: center;
+  width: 40px;
+
+  .divider-line {
+    height: 1px;
+    background-color: #e0e6f2;
+    flex: 1;
+  }
+
+  ion-icon {
+    font-size: 14px;
+    color: #8c9bb5;
+    margin: 0 4px;
+  }
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #8c9bb5;
+
+  ion-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    color: #cfd8e6;
+  }
+
+  h3 {
+    margin: 0 0 8px;
+    font-weight: 600;
+    color: #3b4863;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9em;
+  }
+}
+
+/* Generate button */
+.generate-button {
+  margin-top: 24px;
+  margin-bottom: 24px;
+  --background: linear-gradient(135deg, #3cd1db 0%, #66a6ff 100%);
+  --border-radius: 12px;
+  font-weight: 500;
+  height: 48px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(102, 166, 255, 0.3);
+
+  &:hover {
+    --background: linear-gradient(135deg, #4fd7e0 0%, #7ab3ff 100%);
+  }
+}
+
+/* Animation */
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* For smaller screens adjustments */
+@media (max-width: 480px) {
+  .time-container {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .time-divider {
+    width: 100%;
+    margin: 4px 0;
+  }
+
+  .summary-grid {
+    gap: 10px;
+  }
+}
   `]
 })
 export class ShiftReportPage implements OnInit, OnDestroy {

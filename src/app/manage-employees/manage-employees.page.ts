@@ -11,23 +11,31 @@ import {
   idCardOutline,
   trashOutline,
   addOutline,
+  createOutline,
 } from 'ionicons/icons';
 import { Subscription } from 'rxjs';
 import { Employee, UsersService } from '../services/users.service';
+import { ModalController } from '@ionic/angular';
+import { EditEmployeeModalComponent } from '../modals/edit-employee-modal.component';
 
 @Component({
   selector: 'app-manage-employees',
   templateUrl: './manage-employees.page.html',
   styleUrls: ['./manage-employees.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule],
+  imports: [IonicModule, CommonModule, FormsModule,
+  ],
 })
 export class ManageEmployeesPage implements OnInit, OnDestroy {
   employees: Employee[] = [];
   filteredEmployees: Employee[] = [];
   private employeesSubscription: Subscription | null = null;
 
-  constructor(private router: Router, private usersService: UsersService) {
+  constructor(
+    private router: Router,
+    private usersService: UsersService,
+    private modalController: ModalController
+  ) {
     addIcons({
       searchOutline,
       personCircleOutline,
@@ -35,7 +43,9 @@ export class ManageEmployeesPage implements OnInit, OnDestroy {
       idCardOutline,
       trashOutline,
       addOutline,
+      createOutline, // Add this line
     });
+
   }
 
   ngOnInit() {
@@ -63,26 +73,51 @@ export class ManageEmployeesPage implements OnInit, OnDestroy {
     );
   }
 
+  async editEmployee(employee: Employee) {
+    const modal = await this.modalController.create({
+      component: EditEmployeeModalComponent,
+      componentProps: {
+        employee: { ...employee }
+      }
+    });
+
+    modal.onDidDismiss().then((result) => {
+      if (result.data) {
+        this.usersService.updateEmployee(result.data).then(() => {
+          const index = this.employees.findIndex(e => e.id === result.data.id);
+          if (index !== -1) {
+            this.employees[index] = result.data;
+            this.filteredEmployees = [...this.employees];
+          }
+        });
+      }
+    });
+
+    await modal.present();
+  }
+
   deleteEmployee(employee: Employee) {
     if (employee.id) {
-      // this.usersService.deleteEmployee(employee.id);
+      this.usersService.deleteEmployee(employee.id).then(() => {
+        this.employees = this.employees.filter(e => e.id !== employee.id);
+        this.filteredEmployees = [...this.employees];
+      });
     }
   }
 
   addEmployee() {
-    // Implement navigation to add employee page or show a modal
     this.router.navigate(['/add-employee']);
   }
 
   viewPlanning(employee: Employee) {
-    if (employee) {
-      //  this.router.navigate([employee.planningUrl]);
+    if (employee.id) {
+      this.router.navigate(['/employee-planing-view', employee.id]);
     }
   }
 
   viewBadging(employee: Employee) {
-    if (employee) {
-      // this.router.navigate([employee.badgingUrl]);
+    if (employee.id) {
+      this.router.navigate(['/badged-shifts', employee.id]);
     }
   }
 }

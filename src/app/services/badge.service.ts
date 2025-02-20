@@ -166,6 +166,7 @@ export class BadgeService {
     );
   }
   getBadgedShiftsRealtime(employeeId: string): Observable<BadgedShift[]> {
+
     return collectionData(
       query(
         collection(this.firestore, 'badgedShifts'),

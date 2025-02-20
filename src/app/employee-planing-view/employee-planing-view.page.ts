@@ -7,7 +7,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { register } from 'swiper/element/bundle';
-import { Subscription, combineLatest } from 'rxjs';
+import { Observable, Subscription, combineLatest, switchMap } from 'rxjs';
 
 import { ScheduleService } from './../services/schedule.service';
 import { Shift } from '../services/planning.service';
@@ -15,46 +15,59 @@ import { ClosingPeriod } from '../services/closing-periods.service';
 import { AbsenceRequest } from '../services/absence.service';
 import { AuthService } from '../services/auth.service';
 import {
-  add,
-  chevronBackCircleOutline,
+  timeOutline,
   chevronBackOutline,
   chevronForwardOutline,
-  timeOutline,
+  calendarOutline,
+  briefcaseOutline,
+  closeCircleOutline,
+  airplaneOutline
 } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
-addIcons({ timeOutline, chevronBackOutline, chevronForwardOutline });
+import { ActivatedRoute } from '@angular/router';
+
+// Register icons
+addIcons({
+  timeOutline,
+  chevronBackOutline,
+  chevronForwardOutline,
+  calendarOutline,
+  briefcaseOutline,
+  closeCircleOutline,
+  airplaneOutline
+});
 
 // Register Swiper custom elements
 register();
+
 @Component({
   selector: 'app-employee-planning',
   standalone: true,
   imports: [CommonModule, IonicModule],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
-    <ion-header>
-      <ion-toolbar color="primary">
+    <ion-header class="ion-no-border">
+      <ion-toolbar class="transparent-toolbar">
         <ion-title>My Schedule</ion-title>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content>
-      <!-- Week Display -->
+    <ion-content class="planning-gradient">
+      <!-- Week Navigation -->
       <div class="week-container">
         <div class="week-header">
-          <ion-buttons slot="start">
-            <ion-button (click)="previousWeek()">
-              <ion-icon name="chevron-back-outline"></ion-icon>
-            </ion-button>
-          </ion-buttons>
+          <ion-button fill="clear" (click)="previousWeek()" class="nav-button">
+            <ion-icon name="chevron-back-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+
           <div class="week-range">
+            <ion-icon name="calendar-outline" class="calendar-icon"></ion-icon>
             {{ getWeekRange() }}
           </div>
-          <ion-buttons slot="end">
-            <ion-button (click)="nextWeek()">
-              <ion-icon name="chevron-forward-outline"></ion-icon>
-            </ion-button>
-          </ion-buttons>
+
+          <ion-button fill="clear" (click)="nextWeek()" class="nav-button">
+            <ion-icon name="chevron-forward-outline" slot="icon-only"></ion-icon>
+          </ion-button>
         </div>
 
         <!-- Date Slider -->
@@ -69,9 +82,16 @@ register();
               [class.active]="isSelectedDate(dateItem)"
               (click)="selectDate(dateItem)"
             >
-              <div class="date-slide">
+              <div class="date-slide" [class.selected]="isSelectedDate(dateItem)">
                 <div class="day">{{ dateItem | date : 'EEE' }}</div>
                 <div class="date">{{ dateItem | date : 'd' }}</div>
+
+                <!-- Status indicators -->
+                <div class="status-indicators">
+                  <div class="indicator closed" *ngIf="isClosingDayForDate(dateItem)"></div>
+                  <div class="indicator absent" *ngIf="isAbsentForDate(dateItem) && !isClosingDayForDate(dateItem)"></div>
+                  <div class="indicator shift" *ngIf="hasShiftsForDate(dateItem) && !isClosingDayForDate(dateItem) && !isAbsentForDate(dateItem)"></div>
+                </div>
               </div>
             </swiper-slide>
           </swiper-container>
@@ -79,121 +99,320 @@ register();
       </div>
 
       <!-- Loading Spinner -->
+      <div class="centered-spinner" *ngIf="isLoading">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
 
       <!-- Content Sections -->
-      <ng-container>
+      <div class="schedule-content" *ngIf="!isLoading">
+        <!-- Date Display -->
+        <div class="selected-date">
+          {{ selectedDate | date : 'EEEE, MMMM d, y' }}
+        </div>
+
         <!-- Closing Day -->
-        <ng-container *ngIf="isClosingDay">
-          <ion-card color="light">
-            <ion-card-header>
-              <ion-card-title color="medium">Company Closed</ion-card-title>
-            </ion-card-header>
-            <ion-card-content>
-              The company is closed on this day.
-            </ion-card-content>
-          </ion-card>
-        </ng-container>
+        <ion-card class="status-card closed-card" *ngIf="isClosingDay">
+          <ion-card-content>
+            <div class="status-icon">
+              <ion-icon name="close-circle-outline"></ion-icon>
+            </div>
+            <div class="status-details">
+              <h2>Company Closed</h2>
+              <p>The company is not operating on this day.</p>
+            </div>
+          </ion-card-content>
+        </ion-card>
 
         <!-- Absence -->
-        <ng-container *ngIf="isAbsent && !isClosingDay">
-          <ion-card color="warning">
-            <ion-card-header>
-              <ion-card-title>Absence</ion-card-title>
-            </ion-card-header>
-            <ion-card-content>
-              You are on approved leave on this day.
-            </ion-card-content>
-          </ion-card>
-        </ng-container>
+        <ion-card class="status-card absence-card" *ngIf="isAbsent && !isClosingDay">
+          <ion-card-content>
+            <div class="status-icon">
+              <ion-icon name="airplane-outline"></ion-icon>
+            </div>
+            <div class="status-details">
+              <h2>Scheduled Absence</h2>
+              <p>You have an approved leave on this day.</p>
+            </div>
+          </ion-card-content>
+        </ion-card>
 
         <!-- Shifts -->
         <ng-container *ngIf="!isClosingDay && !isAbsent">
-          <ion-list *ngIf="shifts.length > 0; else noShifts">
-            <ion-item-group>
-              <ion-item-divider color="light">
-                <ion-label>Scheduled Shifts</ion-label>
-              </ion-item-divider>
-              <ion-item *ngFor="let shift of shifts">
-                <ion-icon name="time-outline" slot="start"></ion-icon>
-                <ion-label>
-                  <h2>{{ shift.role }}</h2>
-                  <p>{{ shift.startTime }} - {{ shift.endTime }}</p>
-                </ion-label>
-              </ion-item>
-            </ion-item-group>
-          </ion-list>
+          <div class="shifts-container" *ngIf="shifts.length > 0; else noShifts">
+            <h2 class="section-title">
+              <ion-icon name="briefcase-outline"></ion-icon>
+              Your Shifts
+            </h2>
+
+            <ion-card *ngFor="let shift of shifts" class="shift-card">
+              <ion-card-content>
+                <div class="shift-time">
+                  <ion-icon name="time-outline"></ion-icon>
+                  <span>{{ shift.startTime }} - {{ shift.endTime }}</span>
+                </div>
+                <div class="shift-role">
+                  {{ shift.role }}
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </div>
 
           <ng-template #noShifts>
-            <ion-card color="light">
-              <ion-card-content class="ion-text-center">
-                No shifts scheduled for this day.
+            <ion-card class="status-card no-shifts-card">
+              <ion-card-content>
+                <div class="status-icon">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                </div>
+                <div class="status-details">
+                  <h2>Day Off</h2>
+                  <p>No shifts scheduled for this day.</p>
+                </div>
               </ion-card-content>
             </ion-card>
           </ng-template>
         </ng-container>
-      </ng-container>
+      </div>
     </ion-content>
   `,
-  styles: [
-    `
-      .week-container {
-        padding: 10px;
-        background-color: #f8f9fa; /* Optional: Light background for clarity */
-      }
+  styles: [`
+    /* Main Gradient Background */
+    .planning-gradient {
+      --background: linear-gradient(135deg, #5386d8 0%, #5eb7e0 100%);
+    }
 
-      .week-header {
-        display: flex;
-        align-items: center; /* Vertically center elements */
-        justify-content: space-between; /* Space buttons evenly */
-        text-align: center;
-        font-size: 1.2em;
-        font-weight: bold;
-        margin-bottom: 10px;
-      }
+    .transparent-toolbar {
+      --background: linear-gradient(135deg, #5386d8 0%, #5eb7e0 100%);
 
-      .date-slider-container {
-        padding: 10px 0;
-      }
+    }
 
-      swiper-slide {
-        text-align: center;
-        opacity: 0.6;
-        transition: opacity 0.1s;
-        cursor: pointer;
-      }
+    ion-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
 
-      swiper-slide.active {
-        opacity: 1;
-      }
+    /* Week Navigation */
+    .week-container {
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      margin-bottom: 20px;
+    }
 
-      .date-slide {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 10px;
-        border-radius: 8px;
-        background-color: white;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      }
+    .week-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
 
-      .date-slide .day {
-        font-size: 0.8em;
-        color: #666;
-      }
+    .nav-button {
+      --color: white;
+      --background: rgba(255, 255, 255, 0.2);
+      --border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      margin: 0;
+    }
 
-      .date-slide .date {
-        font-size: 1.2em;
-        font-weight: bold;
-      }
+    .week-range {
+      display: flex;
+      align-items: center;
+      color: white;
+      font-size: 1rem;
+      font-weight: 500;
+    }
 
-      .centered-spinner {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-      }
-    `,
-  ],
+    .calendar-icon {
+      margin-right: 8px;
+      font-size: 1.1rem;
+    }
+
+    /* Date Slider */
+    .date-slider-container {
+      margin-top: 10px;
+    }
+
+    .date-slide {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 8px;
+      border-radius: 12px;
+      background-color: rgba(255, 255, 255, 0.15);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .date-slide.selected {
+      background-color: rgba(255, 255, 255, 0.3);
+      transform: translateY(-3px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .date-slide .day {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 4px;
+    }
+
+    .date-slide .date {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 6px;
+    }
+
+    /* Status indicators */
+    .status-indicators {
+      display: flex;
+      gap: 3px;
+    }
+
+    .indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .indicator.closed {
+      background-color: #ff4961;
+    }
+
+    .indicator.absent {
+      background-color: #ffce00;
+    }
+
+    .indicator.shift {
+      background-color: #2fdf75;
+    }
+
+    swiper-slide {
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    swiper-slide.active {
+      opacity: 1;
+    }
+
+    /* Schedule Content */
+    .schedule-content {
+      padding: 0 16px 24px;
+    }
+
+    .selected-date {
+      color: white;
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 20px;
+      text-align: center;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Cards */
+    .status-card {
+      margin: 0 0 16px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .closed-card {
+      --background: rgba(255, 255, 255, 0.9);
+      border-left: 5px solid #ff4961;
+    }
+
+    .absence-card {
+      --background: rgba(255, 255, 255, 0.9);
+      border-left: 5px solid #ffce00;
+    }
+
+    .no-shifts-card {
+      --background: rgba(255, 255, 255, 0.9);
+      border-left: 5px solid #92949c;
+    }
+
+    ion-card-content {
+      display: flex;
+      padding: 16px;
+    }
+
+    .status-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-right: 16px;
+      color: #5386d8;
+    }
+
+    .status-details h2 {
+      margin: 0 0 5px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1f1f1f;
+    }
+
+    .status-details p {
+      margin: 0;
+      color: #666;
+    }
+
+    /* Shifts Section */
+    .section-title {
+      display: flex;
+      align-items: center;
+      color: white;
+      font-size: 1.1rem;
+      margin: 24px 0 16px;
+    }
+
+    .section-title ion-icon {
+      margin-right: 8px;
+    }
+
+    .shifts-container {
+      margin-top: 16px;
+    }
+
+    .shift-card {
+      margin-bottom: 12px;
+      border-radius: 12px;
+      --background: rgba(255, 255, 255, 0.9);
+      border-left: 5px solid #2fdf75;
+    }
+
+    .shift-time {
+      display: flex;
+      align-items: center;
+      color: #5386d8;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .shift-time ion-icon {
+      margin-right: 8px;
+    }
+
+    .shift-role {
+      color: #444;
+      font-size: 0.95rem;
+    }
+
+    /* Loading Spinner */
+    .centered-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 200px;
+    }
+
+    ion-spinner {
+      --color: white;
+      transform: scale(1.5);
+    }
+  `],
 })
 export class EmployeePlanningViewPage implements OnInit, OnDestroy {
   selectedDate: Date = new Date();
@@ -205,24 +424,36 @@ export class EmployeePlanningViewPage implements OnInit, OnDestroy {
   isAbsent = false;
   isLoading = true;
   employeeId: string | null = null;
+  shiftsMap: Map<string, Shift[]> = new Map();
 
   private dataSub: Subscription | null = null;
   private userSub: Subscription | null = null;
+  private routeSub: Subscription | null = null;
 
   constructor(
     private planningService: ScheduleService,
-    private authService: AuthService
-  ) {}
+    private authService: AuthService,
+    private route: ActivatedRoute
+  ) { }
+
   ngOnInit() {
     this.generateCurrentWeek();
-    this.userSub = this.authService.getCurrentUser().subscribe((user) => {
-      if (user) {
-        this.employeeId = user.uid;
-        this.loadData();
-      } else {
-        this.isLoading = false; // Stop loading if no user is found
-      }
-    });
+    this.routeSub = this.route.paramMap.pipe(
+      switchMap((params) => {
+        const routeId = params.get('employeeId');
+        if (routeId) {
+          this.employeeId = routeId;
+          return new Observable((observer) => observer.next(routeId));
+        } else {
+          return this.authService.getCurrentUser().pipe(
+            switchMap((user) => {
+              this.employeeId = user?.uid || null;
+              return new Observable((observer) => observer.next(user?.uid));
+            })
+          );
+        }
+      })
+    ).subscribe(() => this.loadWeekData());
   }
 
   generateCurrentWeek() {
@@ -238,56 +469,73 @@ export class EmployeePlanningViewPage implements OnInit, OnDestroy {
   getWeekRange(): string {
     const start = this.currentWeek[0];
     const end = this.currentWeek[6];
-    return `${start.toDateString()} - ${end.toDateString()}`;
+    return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
   }
 
   selectDate(date: Date) {
     this.selectedDate = date;
-    this.loadData();
+    this.checkClosingDay();
+    this.checkAbsence();
+    this.loadDateShifts();
   }
 
   previousWeek() {
     this.selectedDate.setDate(this.selectedDate.getDate() - 7);
     this.generateCurrentWeek();
-    this.loadData();
+    this.loadWeekData();
   }
 
   nextWeek() {
     this.selectedDate.setDate(this.selectedDate.getDate() + 7);
     this.generateCurrentWeek();
-    this.loadData();
+    this.loadWeekData();
   }
 
-  loadData() {
+  loadWeekData() {
     if (!this.employeeId) return;
 
     this.isLoading = true;
-    const dayOfWeek = this.selectedDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-    });
+    this.shiftsMap.clear();
 
     this.dataSub = combineLatest([
-      this.planningService.getShiftsByEmployeeAndDay(
-        this.employeeId,
-        dayOfWeek
-      ),
       this.planningService.getApprovedAbsencesByEmployee(this.employeeId),
-      this.planningService.getClosingPeriods(),
+      this.planningService.getClosingPeriods()
     ]).subscribe({
-      next: ([shifts, absences, closingPeriods]) => {
-        this.shifts = shifts;
+      next: ([absences, closingPeriods]) => {
         this.absences = absences;
         this.closingPeriods = closingPeriods;
 
+        // Load shifts for all days in the week
+        this.currentWeek.forEach(date => {
+          const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
+          this.planningService.getShiftsByEmployeeAndDay(
+            this.employeeId!,
+            dayOfWeek
+          ).subscribe(shifts => {
+            this.shiftsMap.set(date.toDateString(), shifts);
+
+            // If this is the selected date, update the shifts
+            if (this.isSelectedDate(date)) {
+              this.loadDateShifts();
+            }
+
+            this.isLoading = false;
+          });
+        });
+
         this.checkClosingDay();
         this.checkAbsence();
-        this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading data:', error);
         this.isLoading = false;
       },
     });
+  }
+
+  loadDateShifts() {
+    const dateString = this.selectedDate.toDateString();
+    this.shifts = this.shiftsMap.get(dateString) || [];
   }
 
   isSelectedDate(date: Date): boolean {
@@ -318,8 +566,34 @@ export class EmployeePlanningViewPage implements OnInit, OnDestroy {
     );
   }
 
+  isClosingDayForDate(date: Date): boolean {
+    return this.closingPeriods.some((period) =>
+      this.isDateWithinInterval(
+        date,
+        new Date(period.startDate),
+        new Date(period.endDate)
+      )
+    );
+  }
+
+  isAbsentForDate(date: Date): boolean {
+    return this.absences.some((absence) =>
+      this.isDateWithinInterval(
+        date,
+        new Date(absence.startDate),
+        new Date(absence.endDate)
+      )
+    );
+  }
+
+  hasShiftsForDate(date: Date): boolean {
+    const shifts = this.shiftsMap.get(date.toDateString());
+    return shifts !== undefined && shifts.length > 0;
+  }
+
   ngOnDestroy() {
     this.dataSub?.unsubscribe();
     this.userSub?.unsubscribe();
+    this.routeSub?.unsubscribe();
   }
 }

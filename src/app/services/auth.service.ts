@@ -12,6 +12,7 @@ import {
   signInWithPopup,
   onAuthStateChanged,
   updateProfile,
+  deleteUser,
 } from '@angular/fire/auth';
 import { Observable, BehaviorSubject } from 'rxjs';
 import {
@@ -203,5 +204,12 @@ export class AuthService {
         this.userSubject.next(null);
       }
     });
+  }
+  deleteUser(uid: string): Promise<void> {
+    const user = this.auth.currentUser;
+    if (user && user.uid === uid) {
+      return deleteUser(user);
+    }
+    return Promise.resolve();
   }
 }

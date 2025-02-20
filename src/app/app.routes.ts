@@ -86,12 +86,20 @@ export const routes: Routes = [
     canActivate: [AuthGuard, AdminGuard],
   },
   {
+    path: 'employee-planing-view/:employeeId',
+    loadComponent: () =>
+      import('./employee-planing-view/employee-planing-view.page').then(
+        (m) => m.EmployeePlanningViewPage
+      ),
+    canActivate: [AuthGuard],
+  },
+  {
     path: 'employee-planing-view',
     loadComponent: () =>
       import('./employee-planing-view/employee-planing-view.page').then(
         (m) => m.EmployeePlanningViewPage
       ),
-    canActivate: [AuthGuard, EmployeeGuard],
+    canActivate: [AuthGuard],
   },
   {
     path: 'qr-scan',
@@ -100,12 +108,19 @@ export const routes: Routes = [
     canActivate: [AuthGuard, EmployeeGuard],
   },
   {
+    path: 'badged-shifts/:employeeId',
+    loadComponent: () =>
+      import('./badged-shifts/badged-shifts.page').then(
+        (m) => m.BadgedShiftsPage
+      ),
+    canActivate: [AuthGuard],
+  }, {
     path: 'badged-shifts',
     loadComponent: () =>
       import('./badged-shifts/badged-shifts.page').then(
         (m) => m.BadgedShiftsPage
       ),
-    canActivate: [AuthGuard, EmployeeGuard],
+    canActivate: [AuthGuard],
   },
   {
     path: 'shift-report',

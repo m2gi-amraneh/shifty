@@ -29,7 +29,7 @@ export class EmployeeGuard implements CanActivate {
         if (user && user.uid) {
           return from(this.authService.getUserRole(user.uid)).pipe(
             map((role) => {
-              if (role === 'employee') {
+              if (role != 'admin') {
                 return true;
               } else {
                 return this.router.createUrlTree(['/admin-dashboard']);
