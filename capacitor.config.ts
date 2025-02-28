@@ -11,6 +11,14 @@ const config: CapacitorConfig = {
       },
     },
   },
+  android: {
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true
+  },
+  server: {
+    androidScheme: 'https'
+  }
 };
 
 export default config;

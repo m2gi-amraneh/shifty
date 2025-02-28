@@ -10,7 +10,11 @@ import { ToastController } from '@ionic/angular';
 import { firstValueFrom, Subscription, combineLatest } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { Timestamp } from '@angular/fire/firestore';
-
+import { addIcons } from 'ionicons';
+import { addCircleOutline, hourglassOutline, logIn, logInOutline, pauseOutline } from 'ionicons/icons';
+addIcons({
+  logInOutline, addCircleOutline, hourglassOutline, pauseOutline
+});
 @Component({
   selector: 'app-employee-badge',
   standalone: true,
@@ -67,7 +71,7 @@ import { Timestamp } from '@angular/fire/firestore';
 
             <!-- Available Shifts -->
             <ng-container *ngIf="!isClosingDay && !isAbsent">
-              <ion-card class="shift-card" *ngIf="availableShifts.length > 0">
+              <ion-card class="shift-card" *ngIf="availableShifts.length > 0 || showExtraOption">
                 <ion-card-header>
                   <ion-card-title>Available Shifts</ion-card-title>
                 </ion-card-header>
@@ -86,6 +90,18 @@ import { Timestamp } from '@angular/fire/firestore';
                         </p>
                       </ion-label>
                       <ion-radio slot="end" [value]="shift.id" [disabled]="shift.completed"></ion-radio>
+                    </ion-item>
+
+                    <!-- Extra Shift Option -->
+                    <ion-item class="shift-item extra-shift-item" lines="full">
+                      <ion-label>
+                        <h2>Extra Shift</h2>
+                        <p>
+                          <ion-icon name="add-circle-outline"></ion-icon>
+                          Unscheduled working time
+                        </p>
+                      </ion-label>
+                      <ion-radio slot="end" value="extra"></ion-radio>
                     </ion-item>
                   </ion-radio-group>
                 </ion-card-content>
@@ -138,6 +154,13 @@ import { Timestamp } from '@angular/fire/firestore';
                     }">
                       {{ currentBadgedShift.status }}
                     </div>
+                  </ion-label>
+                </ion-item>
+                <ion-item *ngIf="currentBadgedShift.shiftId === 'extra'" class="transparent-item">
+                  <ion-icon name="add-circle-outline" slot="start"></ion-icon>
+                  <ion-label>
+                    <h3>Shift Type</h3>
+                    <div class="status-badge extra-badge">Extra Shift</div>
                   </ion-label>
                 </ion-item>
               </ion-list>
@@ -205,6 +228,11 @@ import { Timestamp } from '@angular/fire/firestore';
       margin-bottom: 8px;
     }
 
+    .extra-shift-item {
+      border-top: 1px dashed var(--ion-color-medium);
+      --border-color: transparent;
+    }
+
     .completed-text {
       color: #ff9800;
       display: flex;
@@ -233,6 +261,11 @@ import { Timestamp } from '@angular/fire/firestore';
     .on-break {
       background-color: #ffecb3;
       color: #ff8f00;
+    }
+
+    .extra-badge {
+      background-color: #e1bee7;
+      color: #6a1b9a;
     }
 
     .action-buttons {
@@ -279,6 +312,7 @@ export class EmployeeBadgePage implements OnInit, OnDestroy {
   isAbsent = false;
   employeeId: string | null = null;
   availableShifts: (Shift & { completed?: boolean })[] = [];
+  showExtraOption = true; // Always show the extra shift option
   private dataSub: Subscription | null = null;
 
   constructor(
@@ -291,7 +325,7 @@ export class EmployeeBadgePage implements OnInit, OnDestroy {
   ) {
     this.badgeForm = this.fb.group({
       badgeCode: ['', [Validators.required]],
-      selectedShiftId: ['', [Validators.required]]
+      selectedShiftId: ['extra', [Validators.required]] // Default to 'extra'
     });
   }
 
@@ -354,6 +388,20 @@ export class EmployeeBadgePage implements OnInit, OnDestroy {
     );
 
     this.availableShifts = shiftsWithStatus;
+
+    // Check if the user has already used an extra shift today
+    const hasExtraShift = await this.badgeService.checkExistingBadgedShift(employeeId, 'extra');
+
+    // If no regular shifts and no extra shifts, default to extra
+    if (this.availableShifts.length === 0 && !hasExtraShift) {
+      this.badgeForm.get('selectedShiftId')?.setValue('extra');
+    } else if (this.availableShifts.length > 0 && !this.availableShifts.every(s => s.completed)) {
+      // If there are uncompleted regular shifts, select the first one by default
+      const firstUncompleted = this.availableShifts.find(s => !s.completed);
+      if (firstUncompleted) {
+        this.badgeForm.get('selectedShiftId')?.setValue(firstUncompleted.id);
+      }
+    }
   }
 
   private checkCurrentShift(employeeId: string) {
@@ -374,7 +422,6 @@ export class EmployeeBadgePage implements OnInit, OnDestroy {
 
   canBadge(): boolean {
     return this.badgeForm.valid &&
-      this.availableShifts.length > 0 &&
       !this.isClosingDay &&
       !this.isAbsent;
   }
@@ -405,6 +452,7 @@ export class EmployeeBadgePage implements OnInit, OnDestroy {
 
         if (shiftCompleted) {
           this.showToast('You have already completed this shift today');
+          this.isProcessing = false;
           return;
         }
 

@@ -22,7 +22,7 @@ addIcons({ logoGoogle, logoFacebook, mailOutline, lockClosedOutline, personAddOu
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
-    AsyncPipe,
+
   ],
   template: `
     <ion-content>
@@ -35,32 +35,42 @@ addIcons({ logoGoogle, logoFacebook, mailOutline, lockClosedOutline, personAddOu
           </div>
 
           <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-            <div class="form-group">
-              <ion-item lines="full" class="ion-no-padding custom-item">
-                <ion-icon name="mail-outline" slot="start"></ion-icon>
-                <ion-label position="floating">Email Address</ion-label>
-                <ion-input type="email" formControlName="email"></ion-input>
-              </ion-item>
-              <div class="error-message" *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.invalid">
-                <span *ngIf="loginForm.get('email')?.errors?.['required']">Email is required</span>
-                <span *ngIf="loginForm.get('email')?.errors?.['email']">Please enter a valid email</span>
-              </div>
-            </div>
+          <div class="form-group">
+    <ion-item lines="full" class="ion-no-padding custom-item">
+      <ion-icon name="mail-outline" slot="start"></ion-icon>
+      <ion-label position="floating">Email Address</ion-label>
+      <ion-input
+        type="email"
+        formControlName="email"
+        [clearInput]="true"
+        (ionBlur)="loginForm.get('email')?.markAsTouched()"
+      ></ion-input>
+    </ion-item>
+    <div class="error-message" *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.invalid">
+      <span *ngIf="loginForm.get('email')?.errors?.['required']">Email is required</span>
+      <span *ngIf="loginForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+    </div>
+  </div>
 
-            <div class="form-group">
-              <ion-item lines="full" class="ion-no-padding custom-item">
-                <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
-                <ion-label position="floating">Password</ion-label>
-                <ion-input [type]="showPassword ? 'text' : 'password'" formControlName="password"></ion-input>
-                <ion-button fill="clear" slot="end" (click)="togglePassword()" class="password-toggle">
-                  <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
-                </ion-button>
-              </ion-item>
-              <div class="error-message" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
-                <span *ngIf="loginForm.get('password')?.errors?.['required']">Password is required</span>
-                <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters</span>
-              </div>
-            </div>
+  <div class="form-group">
+    <ion-item lines="full" class="ion-no-padding custom-item">
+      <ion-icon name="lock-closed-outline" slot="start"></ion-icon>
+      <ion-label position="floating">Password</ion-label>
+      <ion-input
+        [type]="showPassword ? 'text' : 'password'"
+        formControlName="password"
+        [clearInput]="true"
+        (ionBlur)="loginForm.get('password')?.markAsTouched()"
+      ></ion-input>
+      <ion-button fill="clear" slot="end" (click)="togglePassword()" class="password-toggle">
+        <ion-icon [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+      </ion-button>
+    </ion-item>
+    <div class="error-message" *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid">
+      <span *ngIf="loginForm.get('password')?.errors?.['required']">Password is required</span>
+      <span *ngIf="loginForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters</span>
+    </div>
+  </div>
 
             <div class="forgot-password">
               <ion-button fill="clear" size="small" routerLink="/forgot-password">

@@ -958,16 +958,16 @@ export class UserContractPage implements OnInit, AfterViewInit, OnDestroy {
 
       const { height } = firstPage.getSize();
       firstPage.drawImage(signatureImage, {
-        x: 120,
-        y: height - 160,
-        width: 70,
-        height: 40,
+        x: 400,
+        y: 400,
+        width: 100,
+        height: 120,
       });
 
       const today = new Date().toLocaleDateString();
       firstPage.drawText(`Date: ${today}`, {
-        x: 120,
-        y: height - 180,
+        x: 400,
+        y: 400,
         size: 10,
       });
 
@@ -984,7 +984,13 @@ export class UserContractPage implements OnInit, AfterViewInit, OnDestroy {
         status: 'active'
       });
 
-      // No need to manually update local state; real-time subscription will handle it
+      // Update the local selectedContract immediately to update UI
+      if (this.selectedContract) {
+        this.selectedContract.signed = true;
+        this.selectedContract.signedAt = new Date();
+        this.selectedContract.status = 'active';
+      }
+
       await loading.dismiss();
       this.showAlert('Success', 'Contract signed successfully!');
     } catch (error) {
@@ -993,7 +999,6 @@ export class UserContractPage implements OnInit, AfterViewInit, OnDestroy {
       this.showAlert('Error', 'Failed to sign contract: ' + (error as any).message);
     }
   }
-
   async showAlert(header: string, message: string) {
     const alert = await this.alertController.create({
       header,
