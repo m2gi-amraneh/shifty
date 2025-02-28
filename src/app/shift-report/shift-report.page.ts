@@ -30,6 +30,9 @@ addIcons({
   template: `
     <ion-header>
       <ion-toolbar class="header-toolbar">
+      <ion-buttons slot="start">
+          <ion-back-button defaultHref="/employee-dashboard"></ion-back-button>
+        </ion-buttons>
         <ion-title>Shift Hours Report</ion-title>
       </ion-toolbar>
     </ion-header>

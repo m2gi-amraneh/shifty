@@ -6,12 +6,15 @@ import {
   doc,
   updateDoc,
   deleteDoc,
-  getDocs,
   query,
   where,
   getDoc,
+  collectionData,
+  docData
 } from '@angular/fire/firestore';
 import { inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root',
@@ -19,18 +22,24 @@ import { inject } from '@angular/core';
 export class PositionsService {
   private firestore: Firestore = inject(Firestore);
 
-  // Get all positions
-  async getPositions(): Promise<any[]> {
+  // Get all positions as an Observable for realtime updates
+  getPositions(): Observable<any[]> {
     const positionsRef = collection(this.firestore, 'positions');
     const q = query(positionsRef);
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    return collectionData(q, { idField: 'id' });
+  }
+
+  // Get a single position as an Observable
+  getPosition(id: string): Observable<any> {
+    const positionRef = doc(this.firestore, 'positions', id);
+    return docData(positionRef, { idField: 'id' });
   }
 
   // Add a new position
-  async addPosition(position: { name: string }): Promise<void> {
+  async addPosition(position: { name: string }): Promise<string> {
     const positionsRef = collection(this.firestore, 'positions');
-    await addDoc(positionsRef, position);
+    const docRef = await addDoc(positionsRef, position);
+    return docRef.id;
   }
 
   // Edit an existing position

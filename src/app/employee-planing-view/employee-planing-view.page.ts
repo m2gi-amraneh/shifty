@@ -48,6 +48,12 @@ register();
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar class="transparent-toolbar">
+      <ion-buttons *ngIf="isadmin" slot="start">
+          <ion-back-button defaultHref="/manage-employees"></ion-back-button>
+        </ion-buttons>
+        <ion-buttons *ngIf="!isadmin"slot="start">
+          <ion-back-button defaultHref="/employee-dashboard"></ion-back-button>
+        </ion-buttons>
         <ion-title>My Schedule</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -429,7 +435,7 @@ export class EmployeePlanningViewPage implements OnInit, OnDestroy {
   private dataSub: Subscription | null = null;
   private userSub: Subscription | null = null;
   private routeSub: Subscription | null = null;
-
+  isadmin = false;
   constructor(
     private planningService: ScheduleService,
     private authService: AuthService,
@@ -442,6 +448,7 @@ export class EmployeePlanningViewPage implements OnInit, OnDestroy {
       switchMap((params) => {
         const routeId = params.get('employeeId');
         if (routeId) {
+          this.isadmin = true;
           this.employeeId = routeId;
           return new Observable((observer) => observer.next(routeId));
         } else {

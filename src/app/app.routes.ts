@@ -65,7 +65,7 @@ export const routes: Routes = [
     path: 'abcance-admin',
     loadComponent: () =>
       import('./abcance-admin/abcance-admin.page').then(
-        (m) => m.AbcanceAdminPage
+        (m) => m.AbsenceManagementPage
       ),
     canActivate: [AuthGuard, AdminGuard],
   },
@@ -128,5 +128,12 @@ export const routes: Routes = [
       import('./shift-report/shift-report.page').then((m) => m.ShiftReportPage),
     canActivate: [AuthGuard, EmployeeGuard],
   },
+  {
+    path: 'documents',
+    loadComponent: () => import('./documents/documents.page').then(m => m.AdminContractsPage)
+  }, {
+    path: 'my-contract',
+    loadComponent: () => import('./contract-employee/contract-employee.component').then(m => m.UserContractPage)
+  }
 
 ];

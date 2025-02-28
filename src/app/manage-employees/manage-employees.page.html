@@ -1,5 +1,39 @@
+<!-- manage-employees.page.html -->
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button
+        defaultHref="/admin-dashboard"
+        color="light"
+      ></ion-back-button>
+    </ion-buttons>
+    <ion-title color="light">Employee Managment</ion-title>
+  </ion-toolbar>
+</ion-header>
+
 <ion-content class="ion-padding main-content">
-  <div class="employee-grid">
+  <!-- Search bar -->
+  <div class="search-bar">
+    <ion-searchbar
+      placeholder="Search employees..."
+      animated
+      (ionChange)="filterEmployees($event)"
+    ></ion-searchbar>
+  </div>
+
+  <!-- Empty state when no employees -->
+  <div class="empty-state" *ngIf="filteredEmployees.length === 0">
+    <ion-icon name="people-outline"></ion-icon>
+    <h3>No employees found</h3>
+    <p>Add your first employee to get started with team management</p>
+    <ion-button (click)="addEmployee()" color="primary">
+      <ion-icon slot="start" name="add-outline"></ion-icon>
+      Add Employee
+    </ion-button>
+  </div>
+
+  <!-- Employee grid -->
+  <div class="employee-grid" *ngIf="filteredEmployees.length > 0">
     <ion-card class="employee-card" *ngFor="let employee of filteredEmployees">
       <div class="card-gradient"></div>
       <ion-icon name="person-circle-outline" class="profile-icon"></ion-icon>
@@ -20,7 +54,7 @@
             class="action-btn"
             (click)="viewPlanning(employee)"
           >
-            <ion-icon name="calendar-outline" slot="start"></ion-icon>
+            <ion-icon name="calendar-outline"></ion-icon>
             Planning
           </ion-button>
           <ion-button
@@ -28,7 +62,7 @@
             class="action-btn"
             (click)="viewBadging(employee)"
           >
-            <ion-icon name="id-card-outline" slot="start"></ion-icon>
+            <ion-icon name="id-card-outline"></ion-icon>
             Badging
           </ion-button>
           <ion-button
@@ -36,7 +70,7 @@
             class="action-btn"
             (click)="editEmployee(employee)"
           >
-            <ion-icon name="create-outline" slot="start"></ion-icon>
+            <ion-icon name="create-outline"></ion-icon>
             Edit
           </ion-button>
           <ion-button
@@ -44,16 +78,13 @@
             class="delete-btn"
             (click)="deleteEmployee(employee)"
           >
-            <ion-icon name="trash-outline" slot="start"></ion-icon>
+            <ion-icon name="trash-outline"></ion-icon>
+            Delete
           </ion-button>
         </div>
       </ion-card-content>
     </ion-card>
   </div>
 
-  <ion-fab slot="fixed" vertical="bottom" horizontal="end">
-    <ion-fab-button class="add-btn" (click)="addEmployee()">
-      <ion-icon name="add-outline"></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
+  <!-- Floating action button for adding employees -->
 </ion-content>

@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ToastController } from '@ionic/angular';
+import { ToastController, AnimationController } from '@ionic/angular';
 import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,6 +16,9 @@ import {
   business,
   businessOutline,
   hourglassOutline,
+  chevronDownOutline,
+  ellipsisVerticalOutline,
+  refreshOutline
 } from 'ionicons/icons';
 import { AbsenceRequest, AbsenceService } from '../services/absence.service';
 import { map, Observable, Subscription } from 'rxjs';
@@ -25,423 +28,534 @@ import { map, Observable, Subscription } from 'rxjs';
   standalone: true,
   imports: [IonicModule, CommonModule, FormsModule],
   template: `
-    <ion-header>
+    <ion-header class="ion-no-border">
       <ion-toolbar class="header-toolbar">
         <ion-buttons slot="start">
-          <ion-back-button defaultHref="/admin-dashboard"></ion-back-button>
+          <ion-back-button defaultHref="/admin-dashboard" color="light"></ion-back-button>
         </ion-buttons>
-        <ion-title>My Absences</ion-title>
+        <ion-title color="light">Absence Management</ion-title>
+        <ion-buttons slot="end">
+          <ion-button (click)="refreshData()" color="light">
+            <ion-icon name="refresh-outline"></ion-icon>
+          </ion-button>
+        </ion-buttons>
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="ion-padding">
+    <ion-content>
+
+
       <!-- Stats Cards -->
-      <ion-grid class="stats-grid">
-        <ion-row>
-          <ion-col size="4">
-            <ion-card
-              class="stats-card pending"
-              [class.active]="selectedStatus === 'pending'"
-              (click)="selectedStatus = 'pending'; filterRequests()"
-            >
-              <ion-card-content>
-                <ion-icon name="hourglass-outline"></ion-icon>
-                <h2>
-                  {{ (absenceService.pendingRequests$ | async)?.length || 0 }}
-                </h2>
-                <p>Pending</p>
-              </ion-card-content>
-            </ion-card>
-          </ion-col>
-          <ion-col size="4">
-            <ion-card
-              class="stats-card approved"
-              [class.active]="selectedStatus === 'approved'"
-              (click)="selectedStatus = 'approved'; filterRequests()"
-            >
-              <ion-card-content>
-                <ion-icon name="checkmark-circle-outline"></ion-icon>
-                <h2>{{ (getApprovedCount$ | async) || 0 }}</h2>
-                <p>Approved</p>
-              </ion-card-content>
-            </ion-card>
-          </ion-col>
-          <ion-col size="4">
-            <ion-card
-              class="stats-card rejected"
-              [class.active]="selectedStatus === 'rejected'"
-              (click)="selectedStatus = 'rejected'; filterRequests()"
-            >
-              <ion-card-content>
-                <ion-icon name="close-circle-outline"></ion-icon>
-                <h2>{{ (getRejectedCount$ | async) || 0 }}</h2>
-                <p>Rejected</p>
-              </ion-card-content>
-            </ion-card>
-          </ion-col>
-        </ion-row>
-      </ion-grid>
+      <div class="content-container">
+        <ion-segment [(ngModel)]="selectedStatus" (ionChange)="filterRequests()" mode="ios" class="custom-segment">
+          <ion-segment-button value="pending" class="segment-button">
+            <ion-icon name="hourglass-outline"></ion-icon>
+            <ion-label>
+              <span class="status-count">{{ (absenceService.pendingRequests$ | async)?.length || 0 }}</span>
+              <span class="status-label">Pending</span>
+            </ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="approved" class="segment-button">
+            <ion-icon name="checkmark-circle-outline"></ion-icon>
+            <ion-label>
+              <span class="status-count">{{ (getApprovedCount$ | async) || 0 }}</span>
+              <span class="status-label">Approved</span>
+            </ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="rejected" class="segment-button">
+            <ion-icon name="close-circle-outline"></ion-icon>
+            <ion-label>
+              <span class="status-count">{{ (getRejectedCount$ | async) || 0 }}</span>
+              <span class="status-label">Rejected</span>
+            </ion-label>
+          </ion-segment-button>
+        </ion-segment>
 
-      <!-- Request Cards -->
-      <div class="requests-container">
-        <ng-container *ngIf="filteredRequests$ | async as requests">
-          <div *ngIf="requests.length === 0" class="empty-state">
-            <ion-icon name="calendar-outline"></ion-icon>
-            <h2>No {{ selectedStatus }} requests</h2>
-            <p>
-              There are currently no {{ selectedStatus }} absence requests to
-              display.
-            </p>
-          </div>
-
-          <ion-card
-            *ngFor="let request of requests"
-            class="request-card"
-            [class]="request.status"
-          >
-            <div class="request-header">
-              <div class="employee-info">
-                <ion-avatar>
-                  <img
-                    [src]="
-                      'https://ui-avatars.com/api/?name=' + request.employeeName
-                    "
-                    alt="employee avatar"
-                  />
-                </ion-avatar>
-                <div class="text-info">
-                  <h2>{{ request.employeeName }}</h2>
-                  <p class="type">
-                    <ion-icon name="business-outline"></ion-icon>
-                    {{ request.type | titlecase }}
-                  </p>
-                </div>
-              </div>
-              <div class="date-badge">
+        <!-- Request Cards -->
+        <div class="requests-container">
+          <ng-container *ngIf="filteredRequests$ | async as requests">
+            <div *ngIf="requests.length === 0" class="empty-state">
+              <div class="empty-illustration">
                 <ion-icon name="calendar-outline"></ion-icon>
-                <span
-                  >{{ request.startDate | date : 'shortDate' }} -
-                  {{ request.endDate | date : 'shortDate' }}</span
-                >
               </div>
+              <h2>No {{ selectedStatus }} requests</h2>
+              <p>
+                There are currently no {{ selectedStatus }} absence requests to
+                display.
+              </p>
             </div>
 
-            <ion-card-content>
-              <div class="reason-section">
-                <h3>
-                  <ion-icon name="document-text-outline"></ion-icon> Reason
-                </h3>
-                <p>{{ request.reason }}</p>
-              </div>
-
-              <div *ngIf="request.status === 'pending'" class="action-section">
-                <ion-item lines="none" class="comment-input">
-                  <ion-label position="stacked">Admin Comment</ion-label>
-                  <ion-textarea
-                    [(ngModel)]="request.adminComment"
-                    placeholder="Add your comment here..."
-                    class="custom-textarea"
-                  ></ion-textarea>
-                </ion-item>
-
-                <div class="action-buttons">
-                  <ion-button
-                    fill="solid"
-                    color="success"
-                    (click)="updateStatus(request, 'approved')"
-                    class="action-button"
-                  >
-                    <ion-icon name="checkmark-outline" slot="start"></ion-icon>
-                    Approve
-                  </ion-button>
-                  <ion-button
-                    fill="solid"
-                    color="danger"
-                    (click)="updateStatus(request, 'rejected')"
-                    class="action-button"
-                  >
-                    <ion-icon name="close-outline" slot="start"></ion-icon>
-                    Reject
-                  </ion-button>
+            <ion-card
+              *ngFor="let request of requests; let i = index"
+              class="request-card animate-card"
+              [class]="request.status"
+              [style.animation-delay]="i * 0.1 + 's'"
+            >
+              <div class="status-indicator" [class]="request.status"></div>
+              <div class="request-header">
+                <div class="employee-info">
+                  <ion-avatar>
+                    <img
+                      [src]="
+                        'https://ui-avatars.com/api/?name=' + request.employeeName + '&background=FF758C&color=fff'
+                      "
+                      alt="employee avatar"
+                    />
+                  </ion-avatar>
+                  <div class="text-info">
+                    <h2>{{ request.employeeName }}</h2>
+                    <p class="type">
+                      <ion-icon name="business-outline"></ion-icon>
+                      {{ request.type | titlecase }}
+                    </p>
+                  </div>
+                </div>
+                <div class="date-badge">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  <span>{{ request.startDate | date : 'MMM d' }} - {{ request.endDate | date : 'MMM d, yyyy' }}</span>
                 </div>
               </div>
 
-              <div *ngIf="request.status !== 'pending'" class="status-section">
-                <div [class]="'status-chip ' + request.status">
-                  <ion-icon
-                    [name]="
-                      request.status === 'approved'
-                        ? 'checkmark-circle-outline'
-                        : 'close-circle-outline'
-                    "
-                  ></ion-icon>
-                  {{ request.status | uppercase }}
+              <ion-card-content>
+                <div class="reason-section">
+                  <h3>
+                    <ion-icon name="document-text-outline"></ion-icon> Reason
+                  </h3>
+                  <p>{{ request.reason }}</p>
                 </div>
-                <div *ngIf="request.adminComment" class="admin-comment">
-                  <h3>Admin Comment</h3>
-                  <p>{{ request.adminComment }}</p>
+
+                <div *ngIf="request.status === 'pending'" class="action-section">
+                  <ion-item lines="none" class="comment-input">
+                    <ion-label position="stacked">Admin Comment</ion-label>
+                    <ion-textarea
+                      [(ngModel)]="request.adminComment"
+                      placeholder="Add your comment here..."
+                      class="custom-textarea"
+                      rows="3"
+                    ></ion-textarea>
+                  </ion-item>
+
+                  <div class="action-buttons">
+                    <ion-button
+                      fill="solid"
+                      class="approve-button"
+                      (click)="updateStatus(request, 'approved')"
+                    >
+                      <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+                      Approve
+                    </ion-button>
+                    <ion-button
+                      fill="solid"
+                      class="reject-button"
+                      (click)="updateStatus(request, 'rejected')"
+                    >
+                      <ion-icon name="close-outline" slot="start"></ion-icon>
+                      Reject
+                    </ion-button>
+                  </div>
                 </div>
-              </div>
-            </ion-card-content>
-          </ion-card>
-        </ng-container>
+
+                <div *ngIf="request.status !== 'pending'" class="status-section">
+                  <div [class]="'status-chip ' + request.status">
+                    <ion-icon
+                      [name]="
+                        request.status === 'approved'
+                          ? 'checkmark-circle-outline'
+                          : 'close-circle-outline'
+                      "
+                    ></ion-icon>
+                    {{ request.status | uppercase }}
+                  </div>
+                  <div *ngIf="request.adminComment" class="admin-comment">
+                    <h3>Admin Comment</h3>
+                    <p>{{ request.adminComment }}</p>
+                  </div>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </ng-container>
+        </div>
       </div>
     </ion-content>
   `,
   styles: [
     `
+      /* Main theme colors */
+      :host {
+        --primary-gradient: linear-gradient(135deg, #ff7eb3 0%, #ff758c 100%);
+        --primary-color: #ff758c;
+        --primary-light: rgba(255, 117, 140, 0.15);
+        --secondary-color: #ff7eb3;
+        --text-light: #ffffff;
+        --text-dark: #333333;
+        --pending-color: #ffb74d;
+        --pending-bg: rgba(255, 183, 77, 0.15);
+        --approved-color: #66bb6a;
+        --approved-bg: rgba(102, 187, 106, 0.15);
+        --rejected-color: #ef5350;
+        --rejected-bg: rgba(239, 83, 80, 0.15);
+        --card-bg: #ffffff;
+        --card-shadow: 0 8px 20px rgba(255, 117, 140, 0.1);
+        --border-radius: 16px;
+      }
+
+      /* Header styling */
       .header-toolbar {
-        --background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        --color: white;
+        --background: linear-gradient(135deg, #ff7eb3 0%, #ff758c 100%);
+        --border-width: 0;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
       }
 
-      .title {
-        font-size: 1.5rem;
-        font-weight: 600;
+      .header-background {
+        background: var(--primary-gradient);
+
+        box-shadow: 0 4px 20px rgba(255, 117, 140, 0.3);
+
+      }
+
+      .header-content {
+        bottom: 25px;
+        left: 20px;
+        color: var(--text-light);
+      }
+
+      .header-content h1 {
+        font-size: 24px;
+        font-weight: 700;
         margin: 0;
-        color: var(--ion-color-dark);
       }
 
-      .stats-grid {
-        margin-bottom: 1rem;
+      .header-content p {
+        margin: 5px 0 0;
+        opacity: 0.9;
+        font-size: 14px;
       }
 
-      .stats-card {
-        margin: 0;
-        border-radius: 16px;
-        transition: all 0.3s ease;
-        cursor: pointer;
-
-        &.active {
-          transform: translateY(-4px);
-          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-        }
-
-        ion-card-content {
-          text-align: center;
-          padding: 1rem;
-
-          ion-icon {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-          }
-
-          h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin: 0.5rem 0;
-          }
-
-          p {
-            margin: 0;
-            color: var(--ion-color-medium);
-            font-size: 0.9rem;
-          }
-        }
-
-        &.pending ion-icon {
-          color: var(--ion-color-warning);
-        }
-
-        &.approved ion-icon {
-          color: var(--ion-color-success);
-        }
-
-        &.rejected ion-icon {
-          color: var(--ion-color-danger);
-        }
+      /* Content container */
+      .content-container {
+        padding: 0 16px;
+        margin-top: 60px;
       }
 
+      /* Custom Segment */
+      .custom-segment {
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        margin-bottom: 24px;
+        padding: 5px;
+        --background: white;
+      }
+
+      .segment-button {
+        border-radius: 12px !important;
+        padding: 8px 0;
+        min-height: 70px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .status-count {
+        display: block;
+        font-size: 20px;
+        font-weight: 700;
+        margin-top: 5px;
+      }
+
+      .status-label {
+        display: block;
+        font-size: 12px;
+        opacity: 0.8;
+      }
+
+      ion-segment-button.segment-button-checked {
+        --indicator-color: transparent;
+        background: var(--primary-light);
+        color: var(--primary-color) !important;
+      }
+
+      ion-segment-button.segment-button-checked ion-icon {
+        color: var(--primary-color);
+      }
+
+      /* Empty state styling */
       .empty-state {
         text-align: center;
-        padding: 3rem 1rem;
-        color: var(--ion-color-medium);
-
-        ion-icon {
-          font-size: 4rem;
-          margin-bottom: 1rem;
-        }
-
-        h2 {
-          font-size: 1.2rem;
-          margin-bottom: 0.5rem;
-        }
-
-        p {
-          font-size: 0.9rem;
-          max-width: 300px;
-          margin: 0 auto;
-        }
+        padding: 30px 16px;
+        color: var(--text-dark);
+        opacity: 0.7;
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        animation: fadeIn 0.5s ease;
       }
 
+      .empty-illustration {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: var(--primary-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+      }
+
+      .empty-illustration ion-icon {
+        font-size: 36px;
+        color: var(--primary-color);
+      }
+
+      .empty-state h2 {
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+
+      .empty-state p {
+        font-size: 14px;
+        max-width: 260px;
+        margin: 0 auto;
+        line-height: 1.4;
+      }
+
+      /* Request Card Styling */
       .request-card {
-        margin: 1rem 0;
-        border-radius: 16px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin: 0 0 20px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
         overflow: hidden;
+        border: none;
+        position: relative;
+        transition: all 0.3s ease;
+      }
 
-        .request-header {
-          padding: 1rem;
-          background: var(--ion-color-light);
-          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      .request-card:active {
+        transform: scale(0.98);
+      }
 
-          .employee-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
+      .animate-card {
+        animation: slideInUp 0.5s ease forwards;
+        opacity: 0;
+        transform: translateY(20px);
+      }
 
-            ion-avatar {
-              width: 48px;
-              height: 48px;
-            }
+      .status-indicator {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+      }
 
-            .text-info {
-              h2 {
-                margin: 0;
-                font-size: 1.1rem;
-                font-weight: 600;
-              }
+      .status-indicator.pending {
+        background-color: var(--pending-color);
+      }
 
-              .type {
-                margin: 0.25rem 0 0;
-                color: var(--ion-color-medium);
-                display: flex;
-                align-items: center;
-                gap: 0.25rem;
+      .status-indicator.approved {
+        background-color: var(--approved-color);
+      }
 
-                ion-icon {
-                  font-size: 0.9rem;
-                }
-              }
-            }
-          }
+      .status-indicator.rejected {
+        background-color: var(--rejected-color);
+      }
 
-          .date-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            color: var(--ion-color-medium);
+      .request-header {
+        padding: 16px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      }
 
-            ion-icon {
-              font-size: 1rem;
-            }
-          }
-        }
+      .employee-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
 
-        .reason-section {
-          margin-bottom: 1rem;
+      .employee-info ion-avatar {
+        width: 48px;
+        height: 48px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
 
-          h3 {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 1rem;
-            color: var(--ion-color-dark);
-            margin-bottom: 0.5rem;
+      .employee-info .text-info h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-dark);
+      }
 
-            ion-icon {
-              font-size: 1.1rem;
-            }
-          }
+      .text-info .type {
+        margin: 4px 0 0;
+        color: #777;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
 
-          p {
-            margin: 0;
-            color: var(--ion-color-medium);
-            line-height: 1.4;
-          }
-        }
+      .date-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background-color: var(--primary-light);
+        color: var(--primary-color);
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 500;
+      }
 
-        .action-section {
-          .comment-input {
-            --background: var(--ion-color-light);
-            border-radius: 8px;
-            margin-bottom: 1rem;
+      .reason-section {
+        margin-bottom: 16px;
+      }
 
-            ion-label {
-              color: var(--ion-color-dark);
-              font-weight: 500;
-            }
+      .reason-section h3 {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: var(--text-dark);
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
 
-            .custom-textarea {
-              --background: var(--ion-color-light);
-              --padding-start: 0;
-              --padding-end: 0;
-              margin-top: 0.5rem;
-            }
-          }
+      .reason-section p {
+        margin: 0;
+        color: #666;
+        line-height: 1.5;
+        font-size: 14px;
+      }
 
-          .action-buttons {
-            display: flex;
-            gap: 1rem;
+      /* Action buttons */
+      .action-section .comment-input {
+        --background: rgba(0, 0, 0, 0.03);
+        border-radius: 12px;
+        margin-bottom: 16px;
+      }
 
-            .action-button {
-              flex: 1;
-              margin: 0;
-              --border-radius: 8px;
-            }
-          }
-        }
+      .action-section ion-label {
+        color: var(--text-dark);
+        font-weight: 500;
+        font-size: 14px;
+        margin-bottom: 6px;
+      }
 
-        .status-section {
-          .status-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            padding: 0.5rem 1rem;
-            border-radius: 100px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-bottom: 1rem;
+      .custom-textarea {
+        --padding-start: 12px;
+        --padding-end: 12px;
+        --background: rgba(0, 0, 0, 0.03);
+        border-radius: 8px;
+        font-size: 14px;
+      }
 
-            &.approved {
-              background: var(--ion-color-success-light);
-              color: var(--ion-color-success);
-            }
+      .action-buttons {
+        display: flex;
+        gap: 12px;
+      }
 
-            &.rejected {
-              background: var(--ion-color-danger-light);
-              color: var(--ion-color-danger);
-            }
+      .approve-button {
+        flex: 1;
+        --background: var(--approved-color);
+        --background-hover: var(--approved-color);
+        --background-activated: var(--approved-color);
+        --border-radius: 12px;
+        min-height: 44px;
+        margin: 0;
+      }
 
-            ion-icon {
-              font-size: 1.1rem;
-            }
-          }
+      .reject-button {
+        flex: 1;
+        --background: var(--rejected-color);
+        --background-hover: var(--rejected-color);
+        --background-activated: var(--rejected-color);
+        --border-radius: 12px;
+        min-height: 44px;
+        margin: 0;
+      }
 
-          .admin-comment {
-            background: var(--ion-color-light);
-            padding: 1rem;
-            border-radius: 8px;
+      /* Status section */
+      .status-section {
+        display: flex;
+        flex-direction: column;
+      }
 
-            h3 {
-              font-size: 0.9rem;
-              color: var(--ion-color-dark);
-              margin: 0 0 0.5rem;
-            }
+      .status-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        align-self: flex-start;
+      }
 
-            p {
-              margin: 0;
-              color: var(--ion-color-medium);
-              font-size: 0.9rem;
-              line-height: 1.4;
-            }
-          }
+      .status-chip.approved {
+        background-color: var(--approved-bg);
+        color: var(--approved-color);
+      }
+
+      .status-chip.rejected {
+        background-color: var(--rejected-bg);
+        color: var(--rejected-color);
+      }
+
+      .status-chip ion-icon {
+        font-size: 16px;
+      }
+
+      .admin-comment {
+        background-color: rgba(0, 0, 0, 0.03);
+        padding: 12px 16px;
+        border-radius: 12px;
+      }
+
+      .admin-comment h3 {
+        font-size: 14px;
+        color: var(--text-dark);
+        margin: 0 0 8px;
+        font-weight: 600;
+      }
+
+      .admin-comment p {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      /* Animations */
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes slideInUp {
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
       }
     `,
   ],
 })
-export class AbcanceAdminPage implements OnInit, OnDestroy {
+export class AbsenceManagementPage implements OnInit, OnDestroy {
   selectedStatus: 'pending' | 'approved' | 'rejected' = 'pending';
   filteredRequests$!: Observable<AbsenceRequest[]>;
   private statusSubscription?: Subscription;
   getApprovedCount$!: Observable<number>;
   getRejectedCount$!: Observable<number>;
+
   constructor(
     public absenceService: AbsenceService,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private animationCtrl: AnimationController
   ) {
     addIcons({
       hourglassOutline,
@@ -454,6 +568,9 @@ export class AbcanceAdminPage implements OnInit, OnDestroy {
       timeOutline,
       checkmarkCircleOutline,
       closeCircleOutline,
+      chevronDownOutline,
+      ellipsisVerticalOutline,
+      refreshOutline
     });
   }
 
@@ -487,11 +604,26 @@ export class AbcanceAdminPage implements OnInit, OnDestroy {
       );
     }
   }
+
+  refreshData() {
+    // Simulate refresh with a toast notification
+    this.presentToast('Data refreshed successfully', 'success');
+    // Here you'd typically call a method to refresh data from your service
+  }
+
   async presentToast(message: string, color: 'success' | 'danger') {
     const toast = await this.toastController.create({
       message,
       duration: 2000,
       color,
+      position: 'top',
+      cssClass: 'custom-toast',
+      buttons: [
+        {
+          icon: 'close-outline',
+          role: 'cancel'
+        }
+      ]
     });
     await toast.present();
   }
@@ -509,8 +641,9 @@ export class AbcanceAdminPage implements OnInit, OnDestroy {
         );
 
         if (success) {
-          // Display success message
-          this.presentToast(`Request ${newStatus} successfully`, 'success');
+          // Display success message with appropriate messaging
+          const actionText = newStatus === 'approved' ? 'approved' : 'rejected';
+          this.presentToast(`Request ${actionText} successfully`, newStatus === 'approved' ? 'success' : 'danger');
         }
       } catch (error) {
         console.error('Error updating request status:', error);
@@ -518,9 +651,5 @@ export class AbcanceAdminPage implements OnInit, OnDestroy {
         this.presentToast('Error updating request status', 'danger');
       }
     }
-  }
-
-  toggleFilterMenu() {
-    // Implémentez le filtrage supplémentaire si nécessaire
   }
 }

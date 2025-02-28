@@ -73,12 +73,12 @@ addIcons({
           </ion-card-header>
         </ion-card>
 
-        <ion-card class="dashboard-card" button routerLink="/features">
+        <ion-card class="dashboard-card" button routerLink="/documents">
           <div class="card-gradient docs-gradient"></div>
           <ion-icon name="document-outline" class="card-icon"></ion-icon>
           <ion-card-header>
-            <ion-card-title>Documentation</ion-card-title>
-            <ion-card-subtitle>System Features</ion-card-subtitle>
+            <ion-card-title>Contract</ion-card-title>
+            <ion-card-subtitle>Manage Employee Contracts</ion-card-subtitle>
           </ion-card-header>
         </ion-card>
 

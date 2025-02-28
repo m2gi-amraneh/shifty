@@ -175,6 +175,38 @@ export class BadgeService {
       )
     ) as Observable<BadgedShift[]>;
   }
+  getBadgedShiftsBetweenDates(
+    employeeId: string,
+    startDate: Date,
+    endDate: Date
+  ): Observable<BadgedShift[]> {
+    const badgeCollection = collection(this.firestore, 'badgedShifts');
+    const q = query(
+      badgeCollection,
+      where('employeeId', '==', employeeId),
+      where('badgeInTime', '>=', Timestamp.fromDate(startDate)),
+      where('badgeInTime', '<=', Timestamp.fromDate(endDate)),
+      orderBy('badgeInTime', 'asc')
+    );
+
+    return from(
+      getDocs(q).then((snapshot) =>
+        snapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            employeeId: data['employeeId'],
+            shiftId: data['shiftId'],
+            badgeInTime: (data['badgeInTime'] as Timestamp).toDate(),
+            badgeOutTime: data['badgeOutTime']
+              ? (data['badgeOutTime'] as Timestamp).toDate()
+              : undefined,
+            status: data['status'],
+          } as BadgedShift;
+        })
+      )
+    );
+  }
   // Complete a badged shift (check out)
   async completeBadgedShift(badgeId: string): Promise<void> {
     const badgeDoc = doc(this.firestore, 'badgedShifts', badgeId);

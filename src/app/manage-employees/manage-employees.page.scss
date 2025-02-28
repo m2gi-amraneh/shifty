@@ -1,103 +1,200 @@
-/* Add to manage-employees.page.scss */
+/* manage-employees.page.scss */
+:host {
+  --ion-background-color: #f6f6f6;
+  --primary-gradient: linear-gradient(135deg, #e94560 0%, #c53678 100%);
+  --card-background: rgba(255, 255, 255, 0.9);
+  --text-color: #333;
+  --card-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
 .header-toolbar {
-  --background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  --color: white;
-}
+  --background: linear-gradient(135deg, #e94560 0%, #c53678 100%);
 
-.search-toolbar {
-  --background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-}
+  height: 80px;
+  border-bottom-left-radius: 30px;
+  border-bottom-right-radius: 30px;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(8, 127, 35, 0.3);
 
+
+}
 .main-content {
-  --background: #0f0f1f;
+  background-image: linear-gradient(45deg, rgba(233, 69, 96, 0.05) 0%, rgba(197, 54, 120, 0.1) 100%);
+}
+
+.search-bar {
+  margin-bottom: 20px;
+  ion-searchbar {
+    --background: var(--card-background);
+    --box-shadow: var(--card-shadow);
+    --border-radius: 12px;
+    --placeholder-color: rgba(0, 0, 0, 0.4);
+  }
 }
 
 .employee-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  padding: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 80px;
 }
 
 .employee-card {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 15px;
-  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  background: var(--card-background);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  min-height: 250px;
 
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 180, 216, 0.2);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  .card-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: var(--primary-gradient);
+    border-radius: 16px 16px 0 0;
+  }
+
+  .profile-icon {
+    position: absolute;
+    top: 35px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 64px;
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    padding: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
 }
 
-.card-gradient {
-  position: absolute;
-  width: 150px;
-  height: 150px;
-  background: linear-gradient(45deg, #00b4d8, #7b2cbf);
-  filter: blur(50px);
-  opacity: 0.3;
-  transition: opacity 0.3s ease;
-}
-
-.profile-icon {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  font-size: 3rem;
-  color: rgba(255, 255, 255, 0.9);
-  opacity: 0.8;
+ion-card-header {
+  padding-top: 60px;
+  text-align: center;
 }
 
 .employee-name {
-  font-size: 1.4rem;
+  margin-top: 20px;
+  font-size: 22px;
   font-weight: 600;
-  color: white;
-  margin-bottom: 0.5rem;
+  color: var(--text-color);
 }
 
 .employee-grade {
-  color: #90e0ef;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 15px;
 }
 
 .actions-content {
-  padding-top: 1rem;
+  padding: 0 16px 16px;
 }
 
 .button-group {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .action-btn {
-  --border-color: rgba(255, 255, 255, 0.2);
-  --color: rgba(255, 255, 255, 0.9);
+  --background: transparent;
+  --color: #c53678;
+  --border-color: rgba(197, 54, 120, 0.3);
+  --border-width: 1px;
   --border-radius: 8px;
-  flex: 1;
+  --padding-start: 12px;
+  --padding-end: 12px;
+  height: 42px;
+  font-size: 14px;
 
   &:hover {
-    --background: rgba(255, 255, 255, 0.1);
+    --background: rgba(233, 69, 96, 0.05);
+    --border-color: #e94560;
+  }
+
+  ion-icon {
+    margin-right: 6px;
+    font-size: 18px;
   }
 }
 
 .delete-btn {
-  --color: #e94560;
-  --border-color: rgba(233, 69, 96, 0.3);
-  min-width: 44px;
+  --background: transparent;
+  --color: #ff5757;
+  --border-color: rgba(255, 87, 87, 0.3);
 
   &:hover {
-    --background: rgba(233, 69, 96, 0.1);
+    --background: rgba(255, 87, 87, 0.05);
+    --border-color: #ff5757;
   }
 }
 
 .add-btn {
-  --background: linear-gradient(45deg, #00b4d8, #7b2cbf);
-  --box-shadow: 0 4px 15px rgba(0, 180, 216, 0.3);
+  --background: var(--primary-gradient);
+  --box-shadow: 0 4px 12px rgba(197, 54, 120, 0.4);
+  height: 60px;
+  width: 60px;
+  margin-bottom: 20px;
+  margin-right: 20px;
+
+  &:hover {
+    --box-shadow: 0 6px 16px rgba(197, 54, 120, 0.6);
+  }
+
+  ion-icon {
+    font-size: 24px;
+  }
+}
+
+// Empty state styles
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+
+  ion-icon {
+    font-size: 80px;
+    color: #c5c5c5;
+    margin-bottom: 20px;
+  }
+
+  h3 {
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+
+  p {
+    color: #999;
+    max-width: 300px;
+    margin: 0 auto 20px;
+  }
+}
+
+// Animation for cards
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.employee-card {
+  animation: fadeIn 0.5s ease forwards;
+  opacity: 0;
+
+  @for $i from 1 through 20 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{$i * 0.05}s;
+    }
+  }
 }

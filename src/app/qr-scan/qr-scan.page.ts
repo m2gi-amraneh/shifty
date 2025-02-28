@@ -31,6 +31,9 @@ addIcons({
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar color="none" class="transparent-toolbar">
+      <ion-buttons slot="start">
+          <ion-back-button defaultHref="/employee-dashboard"></ion-back-button>
+        </ion-buttons>
         <ion-title class="ion-text-center">Employee Profile</ion-title>
       </ion-toolbar>
     </ion-header>

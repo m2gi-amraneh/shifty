@@ -1,166 +1,245 @@
-// Variables for consistent styling
-$primary-color: #3880ff; // Ionic primary color
-$secondary-color: #3dc2ff; // Ionic secondary color
-$background-color: #f4f5f8; // Light background color
-$text-color: #2c2c2c; // Main text color
-$gray-color: #8c8c8c; // Gray text color
-$border-radius: 16px; // Rounded corners
-$shadow: 0 4px 6px rgba(0, 0, 0, 0.1); // Subtle shadow
-
-// Global styles for the page
-ion-content.bg-light {
-  --background: $background-color;
-  color: $text-color;
+:host {
+  --primary-gradient: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%);
+  --primary-light: rgba(0, 180, 216, 0.1);
+  --primary-medium: rgba(0, 119, 182, 0.5);
+  --accent-color: #48cae4;
+  --text-primary: #1a2b3c;
+  --text-secondary: #536b82;
+  --background-light: #f9fbfd;
+  --card-shadow: 0 6px 20px rgba(0, 180, 216, 0.15);
+  --card-border-radius: 16px;
 }
 
-// Header styling
-ion-header.ion-no-border {
-  ion-toolbar.custom-toolbar {
-    --background: $primary-color;
+.bg-light {
+  --background: var(--background-light);
+}
+
+/* Header Styling */
+.custom-toolbar {
+  --background: var(--primary-gradient);
+  padding: 12px 16px;
+  box-shadow: 0 2px 10px rgba(0, 119, 182, 0.2);
+
+  ion-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 0.2px;
+  }
+
+  ion-button {
     --color: white;
+  }
+}
+
+/* Day Selector */
+.day-selector {
+  background: white;
+  padding: 8px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  ion-segment {
+    --background: transparent;
+    padding: 4px;
+    border-radius: 12px;
+    background: rgba(0, 180, 216, 0.05);
+  }
+
+  .day-segment-button {
+    --padding-start: 12px;
+    --padding-end: 12px;
+    --color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &.segment-button-checked {
+      --background: var(--primary-gradient);
+      --color: white;
+      --border-radius: 10px;
+      --indicator-color: transparent;
+      box-shadow: 0 2px 8px rgba(0, 119, 182, 0.2);
+    }
+  }
+}
+
+/* Swiper Container */
+swiper-container {
+  padding: 16px;
+
+  .day-container {
+    padding: 0 8px;
+  }
+
+  .day-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    box-shadow: var(--card-shadow);
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .shift-count {
+      background: var(--primary-light);
+      color: #00b4d8;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+  }
+}
+
+/* Empty State */
+.empty-state {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  margin: 16px;
+  box-shadow: var(--card-shadow);
+
+  ion-icon {
+    font-size: 48px;
+    color: var(--accent-color);
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin: 0 0 20px;
+  }
+
+  ion-button {
+    --background: var(--primary-gradient);
+    --border-radius: 10px;
+    font-weight: 600;
+  }
+}
+
+/* Shift List */
+.shift-list {
+  padding: 0;
+}
+
+.shift-item {
+  margin-bottom: 12px;
+
+  .shift-card {
+    --background: white;
+    border-radius: var(--card-border-radius);
+    box-shadow: var(--card-shadow);
+    margin: 0 8px;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
+
+    .shift-content {
+      padding: 16px;
+
+      .shift-employee {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+
+      .shift-details {
+        gap: 12px;
+
+        .shift-time {
+          font-size: 14px;
+          font-weight: 500;
+          color: white;
+          background: var(--primary-gradient);
+          padding: 4px 12px;
+          border-radius: 12px;
+        }
+
+        .shift-role {
+          --background: var(--primary-light);
+          --color: #0077b6;
+          font-weight: 500;
+          height: 26px;
+          border-radius: 12px;
+        }
+      }
+    }
+  }
+
+  ion-item-options {
+    border-radius: var(--card-border-radius);
+  }
+}
+
+/* FAB */
+ion-fab-button {
+  --background: var(--primary-gradient);
+  --box-shadow: 0 4px 15px rgba(0, 119, 182, 0.3);
+  width: 56px;
+  height: 56px;
+  margin: 16px;
+}
+
+/* Modal Styling */
+.add-shift-modal {
+  --backdrop-opacity: 0.6;
+  --width: 90%;
+  --max-width: 420px;
+  --height: auto;
+  --border-radius: 20px;
+  --background: transparent;
+
+  .modal-wrapper {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+  }
+
+  ion-header {
+    --background: var(--primary-gradient);
+    padding: 8px 16px;
+
+    ion-toolbar {
+      --background: transparent;
+      --border-width: 0;
+    }
 
     ion-title {
-      font-size: 1.25rem;
-      font-weight: bold;
+      color: white;
+      font-weight: 700;
+      font-size: 18px;
+      padding: 0;
     }
 
     ion-button {
       --color: white;
     }
   }
-}
-
-// Day selector styling
-.day-selector {
-  background: white;
-  border-radius: $border-radius;
-  margin: 16px;
-  box-shadow: $shadow;
-
-  ion-segment {
-    ion-segment-button.day-segment-button {
-      --color: $gray-color;
-      --color-checked: $primary-color;
-      --indicator-color: $primary-color;
-      font-weight: 500;
-      text-transform: capitalize;
-    }
-  }
-}
-
-// Swiper container styling
-swiper-container {
-  swiper-slide {
-    .day-container {
-      padding: 16px;
-
-      .empty-state {
-        ion-icon {
-          color: $gray-color;
-        }
-
-        p {
-          color: $gray-color;
-          font-size: 1rem;
-        }
-      }
-
-      .shift-list {
-        background: transparent;
-
-        .shift-item {
-          margin-bottom: 16px;
-
-          .shift-card {
-            --background: white;
-            --border-radius: $border-radius;
-            --padding-start: 16px;
-            --padding-end: 16px;
-            --padding-top: 12px;
-            --padding-bottom: 12px;
-            box-shadow: $shadow;
-
-            .shift-content {
-              display: flex;
-              flex-direction: column;
-              gap: 8px;
-
-              .shift-employee {
-                font-size: 1.1rem;
-                font-weight: bold;
-                color: $text-color;
-                margin: 0;
-              }
-
-              .shift-details {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-
-                .shift-time {
-                  color: $gray-color;
-                  margin: 0;
-                }
-
-                .shift-role {
-                  --background: $secondary-color;
-                  --color: white;
-                  font-size: 0.9rem;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-// Floating action button styling
-ion-fab {
-  ion-fab-button {
-    --background: $primary-color;
-    --color: white;
-    --box-shadow: $shadow;
-  }
-}
-
-// Add shift modal styling
-.add-shift-modal {
-  ion-header {
-    ion-toolbar {
-      --background: $primary-color;
-      --color: white;
-    }
-  }
 
   ion-content {
-    --background: $background-color;
+    --background: white;
+    --padding-start: 20px;
+    --padding-end: 20px;
+    --padding-top: 20px;
+    --padding-bottom: 20px;
 
-    .modal-content {
-      ion-item {
-        --background: white;
-        --border-radius: $border-radius;
-        --padding-start: 16px;
-        --padding-end: 16px;
-        margin-bottom: 16px;
 
-        ion-label {
-          color: $gray-color;
-        }
-
-        ion-select, ion-datetime {
-          --placeholder-color: $gray-color;
-          --color: $text-color;
-        }
-      }
-
-      ion-button {
-        --background: $primary-color;
-        --color: white;
-        --border-radius: $border-radius;
-        --box-shadow: $shadow;
-      }
-    }
   }
 }

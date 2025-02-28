@@ -65,7 +65,10 @@ export class ManageEmployeesPage implements OnInit, OnDestroy {
       this.employeesSubscription.unsubscribe();
     }
   }
-
+  // Add this method to your component class
+  trackById(index: number, employee: Employee): string | undefined {
+    return employee.id;
+  }
   filterEmployees(event: CustomEvent) {
     const searchTerm = event.detail.value.toLowerCase();
     this.filteredEmployees = this.employees.filter((employee) =>

@@ -48,6 +48,12 @@ interface ShiftGroup {
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar class="schedule-gradient">
+      <ion-buttons *ngIf="isadmin" slot="start">
+          <ion-back-button defaultHref="/manage-employees"></ion-back-button>
+        </ion-buttons>
+        <ion-buttons *ngIf="!isadmin"slot="start">
+          <ion-back-button defaultHref="/employee-dashboard"></ion-back-button>
+        </ion-buttons>
         <ion-title class="ion-text-center text-black">My Shifts</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -423,7 +429,7 @@ export class BadgedShiftsPage implements OnInit, OnDestroy {
   private routeSub: Subscription | null = null;
   private dataSub: Subscription | null = null;
   EmployeeId: string | null = null;
-
+  isadmin: boolean = false;
   constructor(
     private badgeService: BadgeService,
     private authService: AuthService,
@@ -437,6 +443,7 @@ export class BadgedShiftsPage implements OnInit, OnDestroy {
       switchMap((params) => {
         const routeId = params.get('employeeId');
         if (routeId) {
+          this.isadmin = true;
           this.EmployeeId = routeId;
           return this.badgeService.getBadgedShiftsRealtime(routeId);
         } else {
