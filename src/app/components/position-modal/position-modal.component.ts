@@ -2,12 +2,18 @@ import { PositionsService } from './../../services/positions.service';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, ModalController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { add, addOutline, briefcaseOutline, closeOutline, createOutline, refreshOutline, trashOutline } from 'ionicons/icons';
+import {
+  IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonIcon,
+  IonContent, IonLabel, IonItem, IonInput, IonTextarea, IonToggle,
+  IonFooter
+} from '@ionic/angular/standalone';
 addIcons({
   trashOutline, closeOutline, createOutline, addOutline, refreshOutline, briefcaseOutline, add
 });
+
 @Component({
   selector: 'app-position-modal',
   template: `
@@ -88,7 +94,21 @@ addIcons({
       </ion-toolbar>
     </ion-footer>
   `,
-  imports: [IonicModule, CommonModule, FormsModule],
+  imports: [CommonModule,
+    FormsModule,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonButtons,
+    IonButton,
+    IonIcon,
+    IonContent,
+    IonLabel,
+    IonItem,
+    IonInput,
+    IonTextarea,
+    IonToggle,
+    IonFooter],
   standalone: true,
   styles: [`
     :host {

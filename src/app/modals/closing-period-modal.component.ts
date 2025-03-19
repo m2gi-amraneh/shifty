@@ -1,13 +1,36 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, ModalController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
 import { ClosingPeriod } from '../services/closing-periods.service';
+import {
+  IonHeader,
+  IonToolbar,
+  IonButtons,
 
+  IonTitle,
+  IonButton,
+  IonIcon,
+  IonContent,
+  IonDatetime
+  , IonInput
+
+} from '@ionic/angular/standalone';
 @Component({
   selector: 'app-closing-period-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonHeader,
+    IonToolbar,
+    IonButtons,
+
+    IonTitle,
+    IonButton,
+    IonIcon,
+    IonContent, IonInput,
+
+    IonDatetime
+    ,
+  ],
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar class="gradient-toolbar">

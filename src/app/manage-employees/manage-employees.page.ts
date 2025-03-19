@@ -17,13 +17,19 @@ import { Subscription } from 'rxjs';
 import { Employee, UsersService } from '../services/users.service';
 import { ModalController } from '@ionic/angular';
 import { EditEmployeeModalComponent } from '../modals/edit-employee-modal.component';
-
+import {
+  IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle,
+  IonContent, IonButton, IonIcon, IonCard,
+  IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonSearchbar
+} from '@ionic/angular/standalone';
 @Component({
   selector: 'app-manage-employees',
   templateUrl: './manage-employees.page.html',
   styleUrls: ['./manage-employees.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule,
+  imports: [CommonModule, FormsModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle,
+    IonContent, IonButton, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonSearchbar,
+    IonCardContent,
   ],
 })
 export class ManageEmployeesPage implements OnInit, OnDestroy {

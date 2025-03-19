@@ -1,7 +1,7 @@
 import { Employee } from './../services/users.service';
 import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+
 import { FormsModule } from '@angular/forms';
 import { BadgedShift, BadgeService } from '../services/badge.service';
 import { AuthService } from '../services/auth.service';
@@ -18,7 +18,23 @@ import {
 } from 'ionicons/icons';
 import { ActivatedRoute } from '@angular/router';
 import { ScrollingModule, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
-
+import {
+  IonHeader,
+  IonToolbar,
+  IonButtons,
+  IonBackButton,
+  IonTitle,
+  IonContent,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
+  IonRefresher,
+  IonRefresherContent,
+  IonList,
+  IonItem,
+  IonIcon,
+  IonBadge
+} from '@ionic/angular/standalone';
 addIcons({
   timeOutline,
   checkmarkCircleOutline,
@@ -40,7 +56,21 @@ interface ShiftGroup {
   standalone: true,
   imports: [
     CommonModule,
-    IonicModule,
+    IonHeader,
+    IonToolbar,
+    IonButtons,
+    IonBackButton,
+    IonTitle,
+    IonContent,
+    IonSegment,
+    IonSegmentButton,
+    IonLabel,
+    IonRefresher,
+    IonRefresherContent,
+    IonList,
+    IonItem,
+    IonIcon,
+    IonBadge,
     FormsModule,
     ScrollingModule
   ],

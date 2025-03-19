@@ -21,11 +21,37 @@ addIcons({
   chevronBackOutline,
   chevronForwardOutline
 });
+import {
+  IonHeader,
+  IonToolbar,
+  IonButtons,
+  IonBackButton,
+  IonTitle,
+  IonButton,
+  IonIcon,
+  IonContent, IonCard,
+  IonCardContent,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
 
+} from '@ionic/angular/standalone'
 @Component({
   selector: 'app-shift-report',
   standalone: true,
-  imports: [CommonModule, IonicModule, FormsModule],
+  imports: [CommonModule, FormsModule, IonHeader,
+    IonToolbar,
+    IonButtons,
+    IonBackButton,
+    IonTitle,
+    IonButton,
+    IonIcon,
+    IonContent,
+    IonSegment,
+    IonSegmentButton,
+    IonLabel, IonCard,
+    IonCardContent,
+  ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ion-header>

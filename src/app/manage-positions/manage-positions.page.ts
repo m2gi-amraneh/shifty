@@ -1,15 +1,51 @@
 import { Component, ViewChild } from '@angular/core';
-import { IonicModule, ModalController, IonContent, AnimationController, ToastController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { PositionsService } from '../services/positions.service';
 import { FormsModule } from '@angular/forms';
 import { PositionModalComponent } from '../components/position-modal/position-modal.component';
 import { Observable } from 'rxjs';
-
+import {
+  IonHeader,
+  IonToolbar,
+  IonButtons,
+  IonBackButton,
+  IonTitle,
+  IonButton,
+  IonIcon,
+  IonContent,
+  IonList,
+  IonItemSliding,
+  IonItem,
+  IonItemOptions,
+  IonItemOption,
+  IonLabel,
+  IonFab,
+  IonFabButton,
+  IonAlert,
+  IonSpinner, AnimationController, ToastController
+} from '@ionic/angular/standalone';
 @Component({
   selector: 'app-manage-positions',
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule],
+  imports: [IonHeader,
+    IonToolbar,
+    IonButtons,
+    IonBackButton,
+    IonTitle,
+    IonButton,
+    IonIcon,
+    IonContent,
+    IonList,
+    IonItemSliding,
+    IonItem,
+    IonItemOptions,
+    IonItemOption,
+    IonLabel,
+    IonFab,
+    IonFabButton,
+    IonAlert,
+    IonSpinner, CommonModule, FormsModule],
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar class="header-toolbar">

@@ -26,11 +26,35 @@ addIcons({
   logOutOutline,
   calendarClearOutline
 });
-
+import {
+  IonContent,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
+  IonButton,
+  IonIcon,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardSubtitle
+} from '@ionic/angular/standalone';
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [IonicModule, CommonModule, RouterModule],
+  imports: [CommonModule,
+    RouterModule,
+    IonContent,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonButtons,
+    IonButton,
+    IonIcon,
+    IonCard,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardSubtitle,],
   template: `
     <ion-content [fullscreen]="true">
       <ion-header class="ion-no-border">

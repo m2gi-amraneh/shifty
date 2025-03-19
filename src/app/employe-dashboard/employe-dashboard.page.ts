@@ -7,10 +7,9 @@ import {
   IonContent,
   IonHeader,
   IonTitle,
-  IonToolbar,
-  IonCard,
-  IonicModule,
-} from '@ionic/angular';
+  IonToolbar, IonIcon, IonButton,
+  IonCard, IonButtons, IonCardHeader, IonCardTitle, IonCardSubtitle
+} from '@ionic/angular/standalone';
 import {
   calendarClearOutline,
   calendarNumberOutline,
@@ -39,7 +38,11 @@ addIcons({
   templateUrl: './employe-dashboard.page.html',
   styleUrls: ['./employe-dashboard.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule, RouterModule],
+  imports: [IonCardSubtitle, IonCardTitle, IonCardHeader, IonButton, IonButtons, CommonModule, FormsModule, RouterModule, IonContent, IonIcon,
+    IonHeader,
+    IonTitle,
+    IonToolbar,
+    IonCard,],
 })
 export class EmployeDashboardPage implements OnInit {
   constructor(private authService: AuthService, private router: Router) { }

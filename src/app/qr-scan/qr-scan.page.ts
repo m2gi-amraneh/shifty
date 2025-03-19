@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+
 import { AuthService } from '../services/auth.service';
 import { Observable } from 'rxjs';
 import { trigger, transition, style, animate } from '@angular/animations';
@@ -23,11 +23,38 @@ addIcons({
   settingsOutline,
   helpCircleOutline, ellipse
 });
+import {
+  IonContent,
+  IonHeader,
+  IonTitle,
+  IonToolbar,
+  IonAvatar,
+  IonCard,
+  IonCardContent,
+  IonBackButton,
+  IonButtons, IonImg,
+  IonItem,
+  IonLabel,
+  IonChip, IonCardSubtitle,
+  IonIcon, IonCardHeader
 
+} from '@ionic/angular/standalone';
 @Component({
   selector: 'app-employee-id',
   standalone: true,
-  imports: [CommonModule, IonicModule],
+  imports: [CommonModule, IonContent,
+    IonHeader,
+    IonTitle,
+    IonToolbar, IonCardHeader,
+    IonAvatar,
+    IonCard, IonCardSubtitle,
+    IonCardContent, IonImg,
+    IonBackButton,
+    IonButtons,
+    IonItem,
+    IonLabel,
+    IonChip,
+    IonIcon],
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar color="none" class="transparent-toolbar">
@@ -44,7 +71,7 @@ addIcons({
         <div class="profile-header" [@fadeIn]>
           <div class="avatar-container">
             <ion-avatar class="large-avatar">
-              <img alt="Silhouette of a person's head" src="https://ionicframework.com/docs/img/demos/avatar.svg" />
+              <ion-img alt="Silhouette of a person's head" src="https://ionicframework.com/docs/img/demos/avatar.svg" ></ion-img>
             </ion-avatar>
             <div class="status-badge" [class.online]="true"></div>
           </div>

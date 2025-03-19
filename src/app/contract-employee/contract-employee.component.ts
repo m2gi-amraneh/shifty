@@ -1,11 +1,11 @@
 import { Component, ViewChild, ElementRef, OnInit, AfterViewInit, ViewEncapsulation, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
+
 import { Storage, ref, uploadBytes, getDownloadURL, getBytes } from '@angular/fire/storage';
 import { Firestore, updateDoc, doc } from '@angular/fire/firestore';
 import SignaturePad from 'signature_pad';
-import { AlertController, LoadingController, AnimationController } from '@ionic/angular';
+
 import { Auth } from '@angular/fire/auth';
 import { Contract, ContractService } from '../services/contract.service';
 import { PDFDocument } from 'pdf-lib';
@@ -14,6 +14,12 @@ import { documentText, briefcase, calendar, cash, time, checkmarkCircle, alertCi
 import { Subscription, BehaviorSubject, combineLatest } from 'rxjs';
 import { filter, switchMap, tap } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
+import {
+  IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent,
+  IonSegment, IonSegmentButton, IonLabel, IonSpinner, IonIcon, IonCard,
+  IonCardContent, IonBadge, IonModal, IonButton, AlertController,
+  LoadingController, AnimationController
+} from '@ionic/angular/standalone';
 
 addIcons({
   documentText,
@@ -30,7 +36,11 @@ addIcons({
 
 @Component({
   selector: 'app-contract-signing',
-  imports: [CommonModule, IonicModule, FormsModule],
+  imports: [CommonModule,
+    FormsModule,
+    IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent,
+    IonSegment, IonSegmentButton, IonLabel, IonSpinner, IonIcon, IonCard,
+    IonCardContent, IonBadge, IonModal, IonButton],
 
   template: `
     <ion-header class="ion-no-border">

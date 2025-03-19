@@ -1,13 +1,34 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, ModalController } from '@ionic/angular';
-import { Employee } from '../services/users.service';
 
+import { Employee } from '../services/users.service';
+import {
+  IonHeader,
+  IonToolbar,
+  IonButtons,
+
+  IonTitle,
+  IonButton,
+  IonIcon,
+  IonContent, IonLabel,
+  IonList, IonItem, IonFooter,
+  IonInput, ModalController
+
+} from '@ionic/angular/standalone';
 @Component({
   selector: 'app-edit-employee-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonToolbar, IonHeader,
+    IonButtons,
+    IonList,
+    IonItem, IonFooter,
+    IonTitle, IonLabel,
+    IonButton,
+    IonIcon,
+    IonContent,
+
+    IonInput,],
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar>

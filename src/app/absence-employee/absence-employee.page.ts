@@ -1,10 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
   IonicModule,
-  ToastController,
-  IonDatetimeButton,
-  IonModal,
-  IonDatetime,
+
 } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import {
@@ -28,11 +25,73 @@ import {
   chatboxOutline,
 } from 'ionicons/icons';
 import { Subscription } from 'rxjs';
+import {
+  IonHeader,
+  IonToolbar,
+  IonButtons,
+  IonBackButton,
+  IonTitle,
+  IonContent,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
+  IonIcon,
+  IonCard,
+  IonCardContent,
+  IonGrid,
+  IonRow,
+  IonCol,
+  IonList,
+  IonItemGroup,
+  IonItemDivider,
+  IonChip,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardSubtitle,
+  IonItem,
+  IonDatetimeButton,
+  IonModal,
+  IonDatetime,
+  IonSelect,
+  IonSelectOption,
+  IonTextarea,
+  IonButton,
+  ToastController,
+} from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-request-absence',
   standalone: true,
-  imports: [IonicModule, CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [IonHeader,
+    IonToolbar,
+    IonButtons,
+    IonBackButton,
+    IonTitle,
+    IonContent,
+    IonSegment,
+    IonSegmentButton,
+    IonLabel,
+    IonIcon,
+    IonCard,
+    IonCardContent,
+    IonGrid,
+    IonRow,
+    IonCol,
+    IonList,
+    IonItemGroup,
+    IonItemDivider,
+    IonChip,
+    IonCardHeader,
+    IonCardTitle,
+    IonCardSubtitle,
+    IonItem,
+    IonDatetimeButton,
+    IonModal,
+    IonDatetime,
+    IonSelect,
+    IonSelectOption,
+    IonTextarea,
+    IonButton, CommonModule, ReactiveFormsModule, FormsModule],
   template: `
     <ion-header>
       <ion-toolbar class="header-toolbar">

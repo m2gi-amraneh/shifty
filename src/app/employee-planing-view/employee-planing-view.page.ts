@@ -5,7 +5,11 @@ import {
   OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+import {
+  IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle,
+  IonContent, IonButton, IonIcon, IonSpinner, IonCard,
+  IonCardContent
+} from '@ionic/angular/standalone';
 import { register } from 'swiper/element/bundle';
 import { Observable, Subscription, combineLatest, switchMap } from 'rxjs';
 
@@ -43,7 +47,9 @@ register();
 @Component({
   selector: 'app-employee-planning',
   standalone: true,
-  imports: [CommonModule, IonicModule],
+  imports: [CommonModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle,
+    IonContent, IonButton, IonIcon, IonSpinner, IonCard,
+    IonCardContent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <ion-header class="ion-no-border">

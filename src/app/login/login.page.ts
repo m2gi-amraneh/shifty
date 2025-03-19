@@ -5,24 +5,45 @@ import {
   Validators,
   ReactiveFormsModule,
 } from '@angular/forms';
-import { IonicModule, ToastController } from '@ionic/angular';
 import { AsyncPipe, CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { addIcons } from 'ionicons';
-import { logoFacebook, logoGoogle, mailOutline, lockClosedOutline, personAddOutline, helpCircleOutline } from 'ionicons/icons';
+import { logoFacebook, logoGoogle, mailOutline, lockClosedOutline, personAddOutline, helpCircleOutline, eyeOutline, eyeOffOutline } from 'ionicons/icons';
+import {
+  IonContent,
+  IonItem,
+  IonIcon,
+  IonLabel,
+  IonInput,
+  IonButton,
+  ToastController
+} from '@ionic/angular/standalone';
 
-addIcons({ logoGoogle, logoFacebook, mailOutline, lockClosedOutline, personAddOutline, helpCircleOutline });
+addIcons({
+  logoGoogle,
+  logoFacebook,
+  mailOutline,
+  lockClosedOutline,
+  personAddOutline,
+  helpCircleOutline,
+  eyeOutline,
+  eyeOffOutline
+});
 
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [
-    IonicModule,
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
-
+    IonContent,
+    IonItem,
+    IonIcon,
+    IonLabel,
+    IonInput,
+    IonButton
   ],
   template: `
     <ion-content>

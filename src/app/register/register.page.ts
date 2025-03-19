@@ -5,7 +5,6 @@ import {
   Validators,
   ReactiveFormsModule,
 } from '@angular/forms';
-import { IonicModule, ToastController } from '@ionic/angular';
 import { AsyncPipe, CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -16,8 +15,19 @@ import {
   mailOutline,
   lockClosedOutline,
   personOutline,
-  arrowBackOutline
+  arrowBackOutline,
+  eyeOutline,
+  eyeOffOutline
 } from 'ionicons/icons';
+import {
+  IonContent,
+  IonItem,
+  IonIcon,
+  IonLabel,
+  IonInput,
+  IonButton,
+  ToastController
+} from '@ionic/angular/standalone';
 
 addIcons({
   logoGoogle,
@@ -25,18 +35,25 @@ addIcons({
   mailOutline,
   lockClosedOutline,
   personOutline,
-  arrowBackOutline
+  arrowBackOutline,
+  eyeOutline,
+  eyeOffOutline
 });
 
 @Component({
   selector: 'app-register',
   standalone: true,
   imports: [
-    IonicModule,
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
     AsyncPipe,
+    IonContent,
+    IonItem,
+    IonIcon,
+    IonLabel,
+    IonInput,
+    IonButton
   ],
   template: `
     <ion-content>

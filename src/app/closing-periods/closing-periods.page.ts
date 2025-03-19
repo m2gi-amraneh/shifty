@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, ModalController, AlertController, AnimationController } from '@ionic/angular';
+import { ModalController, AlertController, AnimationController } from '@ionic/angular';
 import {
   ClosingDaysService,
   ClosingPeriod,
@@ -10,6 +10,20 @@ import { ClosingPeriodModalComponent } from '../modals/closing-period-modal.comp
 import { Subscription } from 'rxjs';
 import { addIcons } from 'ionicons';
 import { add, addOutline, calendarOutline, createOutline, informationCircleOutline, timeOutline, trashOutline } from 'ionicons/icons';
+import {
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonButtons,
+  IonBackButton,
+  IonButton,
+  IonIcon,
+  IonList,
+  IonItem,
+  IonFab,
+  IonFabButton
+} from '@ionic/angular/standalone';
 addIcons({
   calendarOutline,
   addOutline,
@@ -21,7 +35,18 @@ addIcons({
 @Component({
   selector: 'app-closing-days',
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonContent,
+    IonButtons,
+    IonBackButton,
+    IonButton,
+    IonIcon,
+    IonList,
+    IonItem,
+    IonFab,
+    IonFabButton],
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar class="gradient-toolbar">

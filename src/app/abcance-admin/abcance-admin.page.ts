@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ToastController, AnimationController } from '@ionic/angular';
+
 import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -22,11 +22,45 @@ import {
 } from 'ionicons/icons';
 import { AbsenceRequest, AbsenceService } from '../services/absence.service';
 import { map, Observable, Subscription } from 'rxjs';
-
+import {
+  IonHeader,
+  IonToolbar,
+  IonButtons,
+  IonBackButton,
+  IonTitle,
+  IonButton,
+  IonIcon,
+  IonContent,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
+  IonCard,
+  IonAvatar,
+  IonCardContent,
+  IonItem,
+  IonTextarea,
+  ToastController,
+  AnimationController
+} from '@ionic/angular/standalone';
 @Component({
   selector: 'app-absence-management',
   standalone: true,
-  imports: [IonicModule, CommonModule, FormsModule],
+  imports: [IonHeader,
+    IonToolbar,
+    IonButtons,
+    IonBackButton,
+    IonTitle,
+    IonButton,
+    IonIcon,
+    IonContent,
+    IonSegment,
+    IonSegmentButton,
+    IonLabel,
+    IonCard,
+    IonAvatar,
+    IonCardContent,
+    IonItem,
+    IonTextarea, CommonModule, FormsModule],
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar class="header-toolbar">

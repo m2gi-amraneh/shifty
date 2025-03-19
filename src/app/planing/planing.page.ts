@@ -13,10 +13,8 @@ import {
   IonTitle,
   IonToolbar,
   IonButton,
-  IonModal,
-  IonSelect,
-  IonSelectOption,
-  IonDatetime,
+  IonBackButton,
+  IonButtons,
   IonItem,
   IonLabel,
   IonChip,
@@ -27,13 +25,13 @@ import {
   IonItemOption,
   IonItemOptions,
   IonFab,
-  IonFabButton,
-  IonicModule,
-} from '@ionic/angular';
+  IonFabButton, IonIcon
+
+} from '@ionic/angular/standalone';
 import { register } from 'swiper/element/bundle';
 import { addIcons } from 'ionicons';
 import { add, addCircle, calendarOutline, trash, close } from 'ionicons/icons';
-import { SwiperContainer } from 'swiper/element';
+
 import Swiper from 'swiper';
 import { PlanningService } from '../services/planning.service';
 import { from, Observable, of } from 'rxjs';
@@ -65,7 +63,24 @@ interface Shift {
   templateUrl: './planing.page.html',
   styleUrls: ['./planing.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule, AddShiftModalComponent],
+  imports: [CommonModule, FormsModule, IonContent,
+    IonHeader,
+    IonTitle, IonIcon,
+    IonToolbar,
+    IonButton,
+    IonBackButton,
+    IonButtons,
+    IonItem,
+    IonLabel,
+    IonChip,
+    IonSegment,
+    IonSegmentButton,
+    IonList,
+    IonItemSliding,
+    IonItemOption,
+    IonItemOptions,
+    IonFab,
+    IonFabButton, AddShiftModalComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class PlanningPage {

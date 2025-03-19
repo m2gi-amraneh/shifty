@@ -1,8 +1,22 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
 import { Observable } from 'rxjs';
+import {
+  IonHeader,
+  IonToolbar,
+  IonButtons,
+
+  IonTitle,
+  IonButton,
+  IonIcon,
+  IonContent,
+  IonSelect,
+  IonItem, IonSelectOption, IonDatetime
+  ,
+  IonLabel, IonModal
+
+} from '@ionic/angular/standalone';
 interface Employee {
   id: string;
   name: string;
@@ -159,7 +173,18 @@ interface Employee {
     }
   `],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonicModule],
+  imports: [CommonModule, FormsModule, IonHeader,
+    IonToolbar,
+    IonButtons,
+    IonTitle,
+    IonButton,
+    IonIcon,
+    IonContent, IonDatetime,
+
+    IonItem, IonSelectOption, IonSelect,
+
+    IonLabel, IonModal
+  ],
 })
 
 export class AddShiftModalComponent {

@@ -1,7 +1,6 @@
 import { UsersService } from './../services/users.service';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { BadgeService, BadgedShift } from '../services/badge.service';
 import { PlanningService, Shift } from '../services/planning.service';
@@ -15,10 +14,38 @@ import { addCircleOutline, hourglassOutline, logIn, logInOutline, pauseOutline }
 addIcons({
   logInOutline, addCircleOutline, hourglassOutline, pauseOutline
 });
+import {
+  IonContent,
+  IonHeader,
+  IonTitle,
+  IonToolbar,
+  IonAvatar,
+  IonCard,
+  IonCardContent,
+  IonBackButton,
+  IonButtons,
+  IonItem, IonButton, IonRadioGroup, IonRadio, IonList,
+  IonLabel, IonCardTitle, IonInput,
+
+  IonIcon, IonCardHeader
+
+} from '@ionic/angular/standalone';
 @Component({
   selector: 'app-employee-badge',
   standalone: true,
-  imports: [CommonModule, IonicModule, ReactiveFormsModule, DatePipe],
+  imports: [CommonModule, ReactiveFormsModule, DatePipe, IonContent,
+    IonHeader, IonInput,
+    IonTitle,
+    IonToolbar,
+    IonCardTitle,
+    IonCard,
+    IonCardContent,
+    IonBackButton,
+    IonButtons,
+    IonItem,
+    IonLabel, IonButton, IonRadioGroup, IonRadio, IonList,
+
+    IonIcon, IonCardHeader],
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar>
