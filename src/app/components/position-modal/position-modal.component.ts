@@ -2,10 +2,11 @@ import { PositionsService } from './../../services/positions.service';
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ModalController } from '@ionic/angular';
+import { } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { add, addOutline, briefcaseOutline, closeOutline, createOutline, refreshOutline, trashOutline } from 'ionicons/icons';
 import {
+  ModalController,
   IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonIcon,
   IonContent, IonLabel, IonItem, IonInput, IonTextarea, IonToggle,
   IonFooter

@@ -185,26 +185,38 @@ addIcons({
     .form-group {
       margin-bottom: 20px;
     }
-
     .custom-item {
-      --background: #f5f7fa;
-      --border-radius: 10px;
-      --padding-start: 15px;
-      --padding-end: 15px;
-      --min-height: 56px;
-      --highlight-color-focused: #4361ee;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
+  --inner-padding-end: 8px;
+  --inner-padding-start: 8px;
+  --padding-start: 15px;
+  --padding-end: 15px;
+}
 
-    ion-item ion-icon {
-      color: #7f8c8d;
-      margin-right: 8px;
-    }
+ion-item ion-icon[slot="start"] {
+  margin-right: 12px;
+  min-width: 24px;
+}
 
-    ion-label {
-      color: #7f8c8d !important;
-      font-weight: 500;
-    }
+ion-item ion-label[position="floating"] {
+  transform-origin: left top;
+  transform: translateY(12px) scale(1);
+}
+
+ion-item.item-has-focus ion-label[position="floating"] {
+  transform: translateY(0) scale(0.75);
+}
+
+ion-item.item-has-value ion-label[position="floating"] {
+  transform: translateY(0) scale(0.75);
+}
+
+.password-toggle {
+  margin-top: 8px;
+  --padding-end: 4px;
+  --padding-start: 4px;
+  height: 40px;
+}
+
 
     .error-message {
       color: #e74c3c;
@@ -213,12 +225,7 @@ addIcons({
       padding-left: 15px;
     }
 
-    .password-toggle {
-      --color: #7f8c8d;
-      --padding-end: 0;
-      --padding-start: 0;
-      margin: 0;
-    }
+
 
     .forgot-password {
       text-align: right;

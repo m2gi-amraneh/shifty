@@ -140,7 +140,37 @@ addIcons({
     :host {
       height: 100%;
     }
+    .custom-item {
+  --inner-padding-end: 8px;
+  --inner-padding-start: 8px;
+  --padding-start: 15px;
+  --padding-end: 15px;
+}
 
+ion-item ion-icon[slot="start"] {
+  margin-right: 12px;
+  min-width: 24px;
+}
+
+ion-item ion-label[position="floating"] {
+  transform-origin: left top;
+  transform: translateY(12px) scale(1);
+}
+
+ion-item.item-has-focus ion-label[position="floating"] {
+  transform: translateY(0) scale(0.75);
+}
+
+ion-item.item-has-value ion-label[position="floating"] {
+  transform: translateY(0) scale(0.75);
+}
+
+.password-toggle {
+  margin-top: 8px;
+  --padding-end: 4px;
+  --padding-start: 4px;
+  height: 40px;
+}
     .login-container {
       display: flex;
       align-items: center;
@@ -218,12 +248,6 @@ addIcons({
       padding-left: 15px;
     }
 
-    .password-toggle {
-      --color: #7f8c8d;
-      --padding-end: 0;
-      --padding-start: 0;
-      margin: 0;
-    }
 
     .login-button {
       --background: #4361ee;

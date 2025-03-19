@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ModalController, AlertController, AnimationController } from '@ionic/angular';
+import { AlertController, AnimationController } from '@ionic/angular';
 import {
   ClosingDaysService,
   ClosingPeriod,
@@ -21,7 +21,7 @@ import {
   IonIcon,
   IonList,
   IonItem,
-  IonFab,
+  IonFab, ModalController,
   IonFabButton
 } from '@ionic/angular/standalone';
 addIcons({
@@ -35,6 +35,7 @@ addIcons({
 @Component({
   selector: 'app-closing-days',
   standalone: true,
+
   imports: [CommonModule, FormsModule, IonHeader,
     IonToolbar,
     IonTitle,
@@ -46,7 +47,7 @@ addIcons({
     IonList,
     IonItem,
     IonFab,
-    IonFabButton],
+    IonFabButton, ClosingPeriodModalComponent],
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar class="gradient-toolbar">
