@@ -378,9 +378,36 @@ export class RegisterPage {
         await this.authService.register(name, email, password);
         this.router.navigate(['/employee-dashboard']);
         this.showToast('Account created successfully', 'success');
-      } catch (error) {
+      } catch (error: any) {
         console.error('Registration error:', error);
-        this.showToast('Registration failed. Please try again.', 'danger');
+
+        // Check the Firebase error code and show appropriate message
+        let errorMessage = 'Registration failed. Please try again.';
+        let errorType = 'danger';
+
+        if (error.code) {
+          switch (error.code) {
+            case 'auth/email-already-in-use':
+              errorMessage = 'This email address is already in use.';
+              break;
+            case 'auth/invalid-email':
+              errorMessage = 'The email address is not valid.';
+              break;
+            case 'auth/operation-not-allowed':
+              errorMessage = 'Account creation is currently disabled.';
+              break;
+            case 'auth/weak-password':
+              errorMessage = 'Password is too weak. Please use a stronger password.';
+              break;
+            case 'auth/network-request-failed':
+              errorMessage = 'Network error. Please check your connection.';
+              break;
+            default:
+              errorMessage = 'Registration failed. Please try again.';
+          }
+        }
+
+        this.showToast(errorMessage, errorType);
       }
     } else {
       // Mark all fields as touched to show validation errors

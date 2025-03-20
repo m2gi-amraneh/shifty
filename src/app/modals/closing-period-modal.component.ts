@@ -1,13 +1,13 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ModalController } from '@ionic/angular';
+
 import { ClosingPeriod } from '../services/closing-periods.service';
 import {
   IonHeader,
   IonToolbar,
   IonButtons,
-
+  ModalController,
   IonTitle,
   IonButton,
   IonIcon,

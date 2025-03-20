@@ -134,6 +134,9 @@ export const routes: Routes = [
   }, {
     path: 'my-contract',
     loadComponent: () => import('./contract-employee/contract-employee.component').then(m => m.UserContractPage)
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () => import('./forgot-password/forgot-password.component').then(m => m.ForgotPasswordPage)
   }
-
 ];

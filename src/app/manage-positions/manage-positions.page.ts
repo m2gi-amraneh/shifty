@@ -1,5 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
-import { ModalController } from '@ionic/angular';
+
 import { CommonModule } from '@angular/common';
 import { PositionsService } from '../services/positions.service';
 import { FormsModule } from '@angular/forms';
@@ -22,7 +22,7 @@ import {
   IonLabel,
   IonFab,
   IonFabButton,
-  IonAlert,
+  IonAlert, ModalController,
   IonSpinner, AnimationController, ToastController
 } from '@ionic/angular/standalone';
 @Component({
@@ -45,7 +45,7 @@ import {
     IonFab,
     IonFabButton,
     IonAlert,
-    IonSpinner, CommonModule, FormsModule],
+    IonSpinner, CommonModule, FormsModule, PositionModalComponent],
   template: `
     <ion-header class="ion-no-border">
       <ion-toolbar class="header-toolbar">

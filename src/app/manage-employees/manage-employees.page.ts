@@ -12,15 +12,15 @@ import {
   trashOutline,
   addOutline,
   createOutline,
+  peopleOutline,
 } from 'ionicons/icons';
 import { Subscription } from 'rxjs';
 import { Employee, UsersService } from '../services/users.service';
-import { ModalController } from '@ionic/angular';
 import { EditEmployeeModalComponent } from '../modals/edit-employee-modal.component';
 import {
   IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle,
   IonContent, IonButton, IonIcon, IonCard,
-  IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonSearchbar
+  IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonSearchbar, ModalController
 } from '@ionic/angular/standalone';
 @Component({
   selector: 'app-manage-employees',
@@ -29,7 +29,7 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle,
     IonContent, IonButton, IonIcon, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonSearchbar,
-    IonCardContent,
+    IonCardContent, EditEmployeeModalComponent
   ],
 })
 export class ManageEmployeesPage implements OnInit, OnDestroy {
@@ -49,7 +49,7 @@ export class ManageEmployeesPage implements OnInit, OnDestroy {
       idCardOutline,
       trashOutline,
       addOutline,
-      createOutline, // Add this line
+      createOutline, peopleOutline
     });
 
   }

@@ -16,6 +16,7 @@ import {
   signInWithCredential,
   AuthCredential,
   OAuthProvider,
+  sendPasswordResetEmail,
 } from '@angular/fire/auth';
 import { Observable, BehaviorSubject } from 'rxjs';
 import {
@@ -289,5 +290,8 @@ export class AuthService {
       return deleteUser(user);
     }
     return Promise.resolve();
+  }
+  resetPassword(email: string): Promise<void> {
+    return sendPasswordResetEmail(this.auth, email);
   }
 }
