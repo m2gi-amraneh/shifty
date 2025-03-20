@@ -1,0 +1,14 @@
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read and write for authenticated users
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Specific rules for closingDays collection
+    match /closingDays/{document} {
+      allow read: if true;  // Public read access
+      allow write: if request.auth != null && request.auth.token.admin == true;  // Admin write access
+    }
+  }
+}
