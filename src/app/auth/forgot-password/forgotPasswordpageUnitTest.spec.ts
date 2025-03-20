@@ -7,6 +7,7 @@ import { ToastController } from '@ionic/angular/standalone';
 import { By } from '@angular/platform-browser';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ForgotPasswordPage } from './forgot-password.component';
+import { ActivatedRoute } from '@angular/router';
 
 describe('ForgotPasswordPage', () => {
   let component: ForgotPasswordPage;
@@ -24,6 +25,13 @@ describe('ForgotPasswordPage', () => {
     toastControllerMock = jasmine.createSpyObj('ToastController', ['create']);
     toastControllerMock.create.and.returnValue(Promise.resolve(toastSpy));
 
+    const activatedRouteMock = {
+      snapshot: {
+        paramMap: {
+          get: () => null
+        }
+      }
+    };
     await TestBed.configureTestingModule({
       imports: [
         ReactiveFormsModule,
@@ -32,7 +40,8 @@ describe('ForgotPasswordPage', () => {
       providers: [
         { provide: AuthService, useValue: authServiceMock },
         { provide: Router, useValue: routerMock },
-        { provide: ToastController, useValue: toastControllerMock }
+        { provide: ToastController, useValue: toastControllerMock },
+        { provide: ActivatedRoute, useValue: activatedRouteMock }
       ],
       schemas: [CUSTOM_ELEMENTS_SCHEMA]
     }).compileComponents();
