@@ -23,7 +23,6 @@
     "@angular/platform-browser": "^19.0.0",
     "@angular/platform-browser-dynamic": "^19.0.0",
     "@angular/router": "^19.0.0",
-    "@appstrophe/ngx-computeasync": "^0.0.7",
     "@capacitor-community/facebook-login": "^7.0.0",
     "@capacitor-community/file-opener": "^7.0.0",
     "@capacitor-firebase/app": "^7.1.0",
