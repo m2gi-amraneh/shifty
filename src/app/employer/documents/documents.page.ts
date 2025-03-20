@@ -583,7 +583,7 @@ addIcons({
     }
   `]
 })
-export class AdminContractsPage implements OnInit, AfterViewInit, OnDestroy {
+export class AdminContractsPage implements OnInit, OnDestroy {
   @ViewChild('employerSignatureCanvas') employerSignatureCanvas!: ElementRef;
   employerSignaturePad: SignaturePad | undefined;
   selectedContract: any = null; // For viewing details
@@ -623,9 +623,7 @@ export class AdminContractsPage implements OnInit, AfterViewInit, OnDestroy {
     this.subscribeToEmployees();
   }
 
-  ngAfterViewInit() {
-    // Signature pad will be initialized when the modal opens
-  }
+
 
   ngOnDestroy() {
     // Clean up subscriptions to prevent memory leaks

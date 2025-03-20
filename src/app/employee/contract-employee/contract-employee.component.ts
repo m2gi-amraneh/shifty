@@ -702,7 +702,7 @@ addIcons({
     }
   `]
 })
-export class UserContractPage implements OnInit, AfterViewInit, OnDestroy {
+export class UserContractPage implements OnInit, OnDestroy {
   @ViewChild('signatureCanvas') signatureCanvas!: ElementRef;
   signaturePad: SignaturePad | undefined;
 
@@ -784,9 +784,6 @@ export class UserContractPage implements OnInit, AfterViewInit, OnDestroy {
     this.subscriptions.push(contractsSub);
   }
 
-  ngAfterViewInit() {
-    // Signature pad initialization occurs in selectContract
-  }
 
   ngOnDestroy() {
     // Clean up all subscriptions

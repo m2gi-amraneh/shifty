@@ -119,8 +119,8 @@ interface ShiftGroup {
                     ></ion-icon>
                   </div>
                   <div class="shift-details">
-                    <h2 class="shift-title" *ngIf="shift.shiftId!='extra'">Shift</h2>
-                    <h2 class="shift-title" *ngIf="shift.shiftId=='extra'">Extra</h2>
+                    <h2 class="shift-title" *ngIf="shift.shiftId!=='extra'">Shift</h2>
+                    <h2 class="shift-title" *ngIf="shift.shiftId==='extra'">Extra</h2>
                     <div class="time-info">
                       <ion-icon name="calendar-outline" color="medium"></ion-icon>
                       <span>{{ formatTimestamp(shift.badgeInTime) }}</span>
@@ -155,8 +155,8 @@ interface ShiftGroup {
                       <ion-icon name="checkmark-circle-outline" color="light"></ion-icon>
                     </div>
                     <div class="shift-details">
-                    <h2 class="shift-title" *ngIf="shift.shiftId!='extra'">Shift</h2>
-                    <h2 class="shift-title" *ngIf="shift.shiftId=='extra'">Extra</h2>
+                    <h2 class="shift-title" *ngIf="shift.shiftId!=='extra'">Shift</h2>
+                    <h2 class="shift-title" *ngIf="shift.shiftId==='extra'">Extra</h2>
                       <div class="time-info">
                         <div class="time-badge">
                           <ion-icon name="time-outline" color="medium"></ion-icon>
@@ -164,7 +164,9 @@ interface ShiftGroup {
                         </div>
                         <div class="time-badge" *ngIf="shift.badgeOutTime">
                           <ion-icon name="time-outline" color="medium"></ion-icon>
-                          <span>Check Out: {{ formatTime(shift.badgeOutTime) }}</span>
+                          <span>Check Out: {{ formatTime(shift.badgeOutTime) }}
+
+                          </span>
                         </div>
                       </div>
                       <div class="status-container">

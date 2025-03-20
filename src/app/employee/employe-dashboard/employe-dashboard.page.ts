@@ -44,10 +44,10 @@ addIcons({
     IonToolbar,
     IonCard,],
 })
-export class EmployeDashboardPage implements OnInit {
+export class EmployeDashboardPage {
   constructor(private authService: AuthService, private router: Router) { }
 
-  ngOnInit() { }
+
   async logout() {
     await this.authService.logout();
     this.router.navigate(['/login']);

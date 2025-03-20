@@ -20,7 +20,7 @@ export const routes: Routes = [
     path: 'admin-dashboard',
     loadComponent: () =>
       import('./employer/admin-dashboard/admin-dashboard.page').then(
-        (m) => m.AdminDashboardpage
+        (m) => m.AdminDashboardPage
       ),
     canActivate: [AuthGuard, AdminGuard], // Apply guards
   },

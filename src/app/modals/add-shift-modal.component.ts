@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
@@ -187,7 +187,7 @@ interface Employee {
   ],
 })
 
-export class AddShiftModalComponent {
+export class AddShiftModalComponent implements OnChanges {
   @Input() isOpen: boolean = false;
   @Input() day: string = '';
   @Input() employees$!: Observable<Employee[]>;

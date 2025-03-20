@@ -272,7 +272,7 @@ import {
     }
   `],
 })
-export class AdminDashboardpage {
+export class AdminDashboardPage {
   constructor(private authService: AuthService, private router: Router) { }
 
   async logout() {

@@ -1,9 +1,10 @@
 // planning.page.ts
 import {
+  OnInit,
   Component,
   CUSTOM_ELEMENTS_SCHEMA,
   ElementRef,
-  ViewChild,
+  ViewChild, AfterViewInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -83,7 +84,7 @@ interface Shift {
     IonFabButton, AddShiftModalComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class PlanningPage {
+export class PlanningPage implements OnInit, AfterViewInit {
   @ViewChild('swiper', { static: false }) swiperRef!: ElementRef;
   swiper!: Swiper;
   weekDays = [
