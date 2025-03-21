@@ -81,6 +81,12 @@ jobs:
       run: ls -la ./apk
     - name: Deploy to Firebase
       run: firebase deploy --token ${{ secrets.FIREBASE_TOKEN }}
+    - name: Deploy to Firebase App Distribution
+      run: |
+        firebase appdistribution:distribute ./apk/app-debug.apk \
+          --app ${{ secrets.FIREBASE_APP_ID }} \
+          --token ${{ secrets.FIREBASE_TOKEN }} \
+          --groups tester
 
 
  
