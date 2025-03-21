@@ -83,10 +83,10 @@ jobs:
       run: firebase deploy --token ${{ secrets.FIREBASE_TOKEN }}
     - name: Upload APK to Firebase App Distribution
       run: |
-        echo "Distributing APK to testers..."
-        firebase appdistribution:distribute ./apk/app-debug.apk \
+          echo "Distributing APK to testers..."
+          firebase appdistribution:distribute ./apk/app-debug.apk \
           --app ${{ secrets.FIREBASE_APP_ID }} \
           --groups "tester" \
-          --token ${{ secrets.FIREBASE_TOKEN }}
+          --service-account ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
 
  
