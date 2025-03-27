@@ -138,5 +138,16 @@ export const routes: Routes = [
   {
     path: 'forgot-password',
     loadComponent: () => import('./auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordPage)
-  }
+  }, {
+    path: 'create-chat',
+    loadComponent: () =>
+      import('./shared/create-chat-room/create-chat-room.component').then((m) => m.CreateChatComponent),
+    canActivate: [AuthGuard],
+  },
+  {
+    path: 'chat-rooms',
+    loadComponent: () =>
+      import('./shared/group-chat/group-chat.component').then((m) => m.GroupChatComponent),
+    canActivate: [AuthGuard],
+  },
 ];

@@ -14,6 +14,7 @@ import {
   calendarClearOutline,
   calendarNumberOutline,
   calendarOutline,
+  chatbubbleEllipsesOutline,
   documentOutline,
   fingerPrintOutline,
   logOutOutline,
@@ -30,7 +31,7 @@ addIcons({
   peopleOutline,
   calendarNumberOutline,
   documentOutline,
-  calendarOutline, logOutOutline, qrCodeOutline, timeOutline, calendarClearOutline, fingerPrintOutline
+  calendarOutline, logOutOutline, qrCodeOutline, timeOutline, calendarClearOutline, fingerPrintOutline, chatbubbleEllipsesOutline
 });
 
 @Component({

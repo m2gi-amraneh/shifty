@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, query, where, getDocs, updateDoc, deleteDoc, doc } from '@angular/fire/firestore';
+import { Firestore, collection, query, where, getDocs, updateDoc, deleteDoc, doc, orderBy } from '@angular/fire/firestore';
 import { inject } from '@angular/core';
 import { collectionData } from 'rxfire/firestore';
 import { Observable, from, of } from 'rxjs';
@@ -23,7 +23,11 @@ export class UsersService {
   private auth: Auth = inject(Auth);
 
   constructor() { }
-
+  getAllUsers(): Observable<any[]> {
+    const usersRef = collection(this.firestore, 'users');
+    const allUsersQuery = query(usersRef, orderBy('name'));
+    return collectionData(allUsersQuery, { idField: 'id' }) as Observable<any[]>;
+  }
   getEmployees(): Observable<Employee[]> {
     const usersRef = collection(this.firestore, 'users');
     const employeesQuery = query(usersRef, where('role', '!=', 'admin'));

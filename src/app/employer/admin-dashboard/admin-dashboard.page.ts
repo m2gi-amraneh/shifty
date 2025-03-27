@@ -12,7 +12,8 @@ import {
   personAddOutline,
   logOutOutline,
   bed,
-  calendarClearOutline
+  calendarClearOutline,
+  chatbubbleEllipsesOutline
 } from 'ionicons/icons';
 
 // Add the icons to use them
@@ -24,7 +25,8 @@ addIcons({
   documentOutline,
   personAddOutline,
   logOutOutline,
-  calendarClearOutline
+  calendarClearOutline,
+  chatbubbleEllipsesOutline
 });
 import {
   IonContent,
@@ -132,6 +134,14 @@ import {
             <ion-card-subtitle>Manage Closed Days</ion-card-subtitle>
           </ion-card-header>
         </ion-card>
+        <ion-card class="dashboard-card" button routerLink="/chat-rooms">
+      <div class="card-gradient chat-gradient"></div>
+      <ion-icon name="chatbubble-ellipses-outline"  class="card-icon"></ion-icon>
+      <ion-card-header>
+        <ion-card-title>Chat</ion-card-title>
+        <ion-card-subtitle>Exchange with the team</ion-card-subtitle>
+      </ion-card-header>
+    </ion-card>
       </div>
     </ion-content>
   `,
@@ -199,7 +209,8 @@ import {
     .closing-gradient {
       background: linear-gradient(135deg, #f1c01c 0%, #da7356 100%);
     }
-
+   .chat-gradient{background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  }
     .card-icon {
       font-size: 42px;
       color: rgba(255, 255, 255, 0.9);

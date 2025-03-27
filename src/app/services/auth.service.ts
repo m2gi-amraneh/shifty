@@ -104,7 +104,7 @@ export class AuthService {
   ) {
     const badgeCode = this.generateBadgeCode();
     const userRef = doc(this.firestore, `users/${uid}`);
-    return setDoc(userRef, { name, email, role, badgeCode });
+    return setDoc(userRef, { id: uid, name, email, role, badgeCode });
   }
 
   private async checkAndAssignRole(uid: string, name: string, email: string): Promise<void> {
@@ -113,7 +113,7 @@ export class AuthService {
 
     if (!userDoc.exists()) {
       const badgeCode = this.generateBadgeCode();
-      await setDoc(userRef, { name, email, role: 'employee', badgeCode });
+      await setDoc(userRef, { id: uid, name, email, role: 'employee', badgeCode });
     }
   }
 
