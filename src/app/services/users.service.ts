@@ -66,4 +66,18 @@ export class UsersService {
       return Promise.resolve();
     });
   }
+  getUserrole(userId: string): Observable<string | null> {
+    const usersRef = collection(this.firestore, 'users');
+    const userQuery = query(usersRef, where('id', '==', userId));
+    return from(getDocs(userQuery)).pipe(
+      map(snapshot => {
+        if (snapshot.empty) {
+          return null;
+        } else {
+          const doc = snapshot.docs[0];
+          return doc.data()['role'] as string;
+        }
+      })
+    );
+  }
 }
