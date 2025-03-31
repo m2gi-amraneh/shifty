@@ -13,6 +13,7 @@ import {
   addOutline,
   createOutline,
   peopleOutline,
+  documentTextOutline,
 } from 'ionicons/icons';
 import { Subscription } from 'rxjs';
 import { Employee, UsersService } from '../../services/users.service';
@@ -33,6 +34,7 @@ import {
   ],
 })
 export class ManageEmployeesPage implements OnInit, OnDestroy {
+
   employees: Employee[] = [];
   filteredEmployees: Employee[] = [];
   private employeesSubscription: Subscription | null = null;
@@ -48,7 +50,7 @@ export class ManageEmployeesPage implements OnInit, OnDestroy {
       calendarOutline,
       idCardOutline,
       trashOutline,
-      addOutline,
+      addOutline, documentTextOutline,
       createOutline, peopleOutline
     });
 
@@ -127,6 +129,11 @@ export class ManageEmployeesPage implements OnInit, OnDestroy {
   viewBadging(employee: Employee) {
     if (employee.id) {
       this.router.navigate(['/badged-shifts', employee.id]);
+    }
+  }
+  viewReport(employee: Employee) {
+    if (employee.id) {
+      this.router.navigate(['/shift-report', employee.id]);
     }
   }
 }

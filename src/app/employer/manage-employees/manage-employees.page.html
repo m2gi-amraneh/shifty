@@ -60,6 +60,14 @@
           <ion-button
             fill="outline"
             class="action-btn"
+            (click)="viewReport(employee)"
+          >
+            <ion-icon name="document-text-outline"></ion-icon>
+            Hours Report
+          </ion-button>
+          <ion-button
+            fill="outline"
+            class="action-btn"
             (click)="viewBadging(employee)"
           >
             <ion-icon name="id-card-outline"></ion-icon>
@@ -72,14 +80,6 @@
           >
             <ion-icon name="create-outline"></ion-icon>
             Edit
-          </ion-button>
-          <ion-button
-            fill="outline"
-            class="delete-btn"
-            (click)="deleteEmployee(employee)"
-          >
-            <ion-icon name="trash-outline"></ion-icon>
-            Delete
           </ion-button>
         </div>
       </ion-card-content>

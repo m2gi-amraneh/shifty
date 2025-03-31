@@ -1,245 +1,340 @@
 :host {
   --primary-gradient: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%);
+  --primary-color: #0096c7; // A distinct primary color from the gradient
   --primary-light: rgba(0, 180, 216, 0.1);
   --primary-medium: rgba(0, 119, 182, 0.5);
-  --accent-color: #48cae4;
-  --text-primary: #1a2b3c;
-  --text-secondary: #536b82;
-  --background-light: #f9fbfd;
-  --card-shadow: 0 6px 20px rgba(0, 180, 216, 0.15);
-  --card-border-radius: 16px;
+  --accent-color: #48cae4; // Lighter accent
+  --text-primary: #1a2b3c; // Dark blue/grey for text
+  --text-secondary: #536b82; // Lighter grey text
+  --background-light: #f4f7f9; // Very light grey background
+  --card-shadow: 0 4px 12px rgba(0, 119, 182, 0.08); // Softer shadow
+  --card-border-radius: 12px;
+  --border-color: #e0e7ef; // Light border color
+  --danger-light: rgba(245, 61, 61, 0.1);
+  --warning-light: rgba(255, 196, 9, 0.1);
 }
 
-.bg-light {
+.page-background {
   --background: var(--background-light);
 }
 
-/* Header Styling */
+/* Header */
 .custom-toolbar {
   --background: var(--primary-gradient);
-  padding: 12px 16px;
-  box-shadow: 0 2px 10px rgba(0, 119, 182, 0.2);
+  --min-height: 60px;
 
   ion-title {
-    font-size: 20px;
-    font-weight: 700;
+    font-weight: 600;
     color: white;
-    letter-spacing: 0.2px;
   }
 
-  ion-button {
+  ion-buttons ion-button {
     --color: white;
+    --ripple-color: rgba(255, 255, 255, 0.2);
   }
 }
 
-/* Day Selector */
-.day-selector {
-  background: white;
-  padding: 8px 16px;
+/* Day Selector Sticky */
+.day-selector-sticky {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: 100; // Ensure it's above content
+  background: var(--background-light); // Match page background
+  padding: 8px 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); // Subtle shadow below
+}
 
-  ion-segment {
-    --background: transparent;
-    padding: 4px;
-    border-radius: 12px;
-    background: rgba(0, 180, 216, 0.05);
+.day-segment {
+  --background: transparent; // No background for the segment itself
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 8px; // Padding inside the sticky container
+}
+
+.day-segment-button {
+  --padding-start: 10px;
+  --padding-end: 10px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  --color: var(--text-secondary);
+  --color-checked: white; // Text color when checked
+  --background: transparent; // Default background
+  --background-checked: var(--primary-color); // Background when checked
+  --indicator-color: transparent; // Hide the default indicator line
+  --border-radius: 20px; // Pill shape
+  font-weight: 500;
+  text-transform: none;
+  margin: 0 3px; // Small gap between buttons
+  transition: background 0.3s ease, color 0.3s ease;
+  flex-shrink: 0; // Prevent shrinking on small screens
+
+  ion-label {
+    font-size: 0.85rem;
   }
 
-  .day-segment-button {
-    --padding-start: 12px;
-    --padding-end: 12px;
-    --color: var(--text-secondary);
-    font-weight: 600;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-
-    &.segment-button-checked {
-      --background: var(--primary-gradient);
-      --color: white;
-      --border-radius: 10px;
-      --indicator-color: transparent;
-      box-shadow: 0 2px 8px rgba(0, 119, 182, 0.2);
-    }
+  &::part(native) { // Style the inner button element
+    border-radius: 20px;
   }
 }
 
-/* Swiper Container */
-swiper-container {
-  padding: 16px;
+/* Swiper */
+.schedule-swiper {
+  width: 100%;
+  // Adjust height calculation if needed, considering padding
+  height: calc(100% - 70px); // Approximate height of sticky header + padding
+}
 
-  .day-container {
-    padding: 0 8px;
-  }
+.day-content-wrapper {
+  // Use wrapper for consistent padding instead of on swiper slide directly
+  padding-top: 16px;
+  padding-bottom: 80px; // Ensure space above FAB
+}
 
-  .day-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    background: white;
-    border-radius: 12px;
-    margin-bottom: 16px;
-    box-shadow: var(--card-shadow);
+/* Day Header Card */
+.day-header-card {
+  margin: 0 0 20px 0; // More margin below
+  box-shadow: none;
+  border-radius: var(--card-border-radius);
+  background: white;
+  border: 1px solid var(--border-color);
+  overflow: hidden; // Clip content if needed
+}
 
-    h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--text-primary);
-    }
+.day-header-info {
+   padding: 12px 16px;
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 10px; // Add gap
 
-    .shift-count {
-      background: var(--primary-light);
-      color: #00b4d8;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
+   h2 {
+     margin: 0;
+     font-size: 1.1rem;
+     font-weight: 600;
+     color: var(--text-primary);
+     white-space: nowrap; // Prevent wrapping
+     overflow: hidden;
+     text-overflow: ellipsis;
+   }
+
+   .shift-count-chip {
+     background: var(--primary-light);
+     color: var(--primary-color);
+     padding: 4px 10px;
+     border-radius: 10px;
+     font-size: 0.75rem;
+     font-weight: 600;
+     flex-shrink: 0; // Prevent shrinking
+   }
+}
+
+/* Loading and Empty States */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px; // Ensure space for spinner
+  padding: 20px 0;
+
+  ion-spinner {
+    transform: scale(1.2);
+    --color: var(--primary-color);
   }
 }
 
-/* Empty State */
 .empty-state {
   background: white;
-  border-radius: 16px;
-  padding: 32px;
-  text-align: center;
-  margin: 16px;
-  box-shadow: var(--card-shadow);
+  border-radius: var(--card-border-radius);
+  margin-top: 20px;
+  border: 1px dashed var(--border-color);
 
-  ion-icon {
-    font-size: 48px;
-    color: var(--accent-color);
+  .empty-icon {
+    font-size: 3rem;
+    color: var(--primary-medium);
     margin-bottom: 16px;
+    opacity: 0.6;
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin-bottom: 8px;
   }
 
   p {
     color: var(--text-secondary);
-    font-size: 16px;
-    margin: 0 0 20px;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
   }
 
   ion-button {
-    --background: var(--primary-gradient);
-    --border-radius: 10px;
-    font-weight: 600;
+    --color: var(--primary-color);
+    font-weight: 500;
+    --ripple-color: var(--primary-light);
   }
 }
 
-/* Shift List */
+/* Shift List Styling */
 .shift-list {
-  padding: 0;
+  background: transparent;
+  padding: 0; // Remove default list padding
 }
 
 .shift-item {
+  --padding-start: 0; // Reset padding
+  --padding-end: 0;
+  --inner-padding-start: 16px; // Apply padding to inner container
+  --inner-padding-end: 10px; // Less padding on button side
+  --inner-padding-top: 12px;
+  --inner-padding-bottom: 12px;
+  --background: white;
+  border-radius: var(--card-border-radius);
   margin-bottom: 12px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color);
+  overflow: hidden; // Important for border radius
+  align-items: stretch; // Make item stretch vertically
 
-  .shift-card {
-    --background: white;
-    border-radius: var(--card-border-radius);
-    box-shadow: var(--card-shadow);
-    margin: 0 8px;
-    transition: transform 0.2s ease;
+  // Use flex layout for the item's inner content
+  .shift-content {
+    flex: 1; // Allow content to take available space
+    display: flex;
+    flex-direction: column;
+    justify-content: center; // Vertically center if needed, or remove for top align
+  }
 
-    &:hover {
-      transform: translateY(-2px);
-    }
+  ion-label {
+    white-space: normal; // Allow text wrapping
+    padding: 0; // Remove default label padding
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px; // Space between employee name and meta
+    width: 100%; // Ensure label takes full width within its container
+  }
 
-    .shift-content {
-      padding: 16px;
+  .shift-employee {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0; // Reset margin
+    line-height: 1.3;
+  }
 
-      .shift-employee {
-        font-size: 17px;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin-bottom: 8px;
-      }
+  .shift-meta {
+    display: flex;
+    flex-direction: column; // Stack time/duration and role vertically
+    gap: 8px; // Space between meta groups
+    align-items: flex-start; // Align items to the start
+  }
 
-      .shift-details {
-        gap: 12px;
+  .shift-time-duration {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap; // Allow wrapping
+    gap: 6px 12px; // Row and column gap
+  }
 
-        .shift-time {
-          font-size: 14px;
-          font-weight: 500;
-          color: white;
-          background: var(--primary-gradient);
-          padding: 4px 12px;
-          border-radius: 12px;
-        }
+  .shift-time, .shift-duration {
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem; // Slightly smaller
+    color: var(--text-secondary);
+    font-weight: 500;
 
-        .shift-role {
-          --background: var(--primary-light);
-          --color: #0077b6;
-          font-weight: 500;
-          height: 26px;
-          border-radius: 12px;
-        }
-      }
+    ion-icon {
+      margin-right: 5px;
+      font-size: 1.1em; // Make icon slightly bigger than text
+      position: relative;
+      top: 1px; // Fine-tune vertical alignment
     }
   }
 
-  ion-item-options {
-    border-radius: var(--card-border-radius);
+   .shift-duration ion-icon {
+      color: var(--text-secondary); // Match text color
+   }
+
+
+  .shift-role {
+    --background: var(--primary-light);
+    --color: var(--primary-color);
+    font-weight: 500;
+    font-size: 0.75rem; // Smaller role chip
+    padding: 3px 8px;
+    height: auto; // Adjust height automatically
+    border-radius: 8px;
+    margin: 0; // Remove default chip margin
+    display: inline-flex; // Ensure it fits content
+    vertical-align: middle;
+
+     &.placeholder-role {
+       --background: #e0e7ef; // Grey background for placeholder
+       --color: var(--text-secondary);
+       font-style: italic;
+     }
+
+    ion-icon {
+       font-size: 0.9rem; // Slightly smaller icon
+       margin-right: 4px;
+    }
+     ion-label {
+        padding: 0; // Reset label padding inside chip
+        margin: 0;
+        font-size: inherit;
+        font-weight: inherit;
+        line-height: 1.2;
+     }
+  }
+
+  // Action buttons container
+  .shift-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 8px; // Space between content and buttons
+    flex-shrink: 0; // Prevent buttons from shrinking
+  }
+
+  .action-button {
+    --padding-start: 6px;
+    --padding-end: 6px;
+    height: 32px; // Explicit height
+    width: 32px; // Make them square-ish
+    --border-radius: 50%; // Circle buttons
+    margin: 0 2px; // Small gap between buttons
+
+    ion-icon {
+      font-size: 1.1rem; // Adjust icon size
+    }
+
+    &[color="warning"] { --ripple-color: var(--warning-light); }
+    &[color="danger"] { --ripple-color: var(--danger-light); }
   }
 }
+
 
 /* FAB */
-ion-fab-button {
+.fab-gradient {
   --background: var(--primary-gradient);
+  --background-activated: var(--primary-gradient); // Keep gradient on activate
   --box-shadow: 0 4px 15px rgba(0, 119, 182, 0.3);
-  width: 56px;
-  height: 56px;
-  margin: 16px;
 }
 
-/* Modal Styling */
-.add-shift-modal {
-  --backdrop-opacity: 0.6;
-  --width: 90%;
-  --max-width: 420px;
-  --height: auto;
-  --border-radius: 20px;
-  --background: transparent;
+/* Responsive adjustments */
+@media (min-width: 576px) {
+  .shift-item {
+     --inner-padding-start: 20px;
+     --inner-padding-end: 16px;
 
-  .modal-wrapper {
-    background: white;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: var(--card-shadow);
-  }
+     .shift-meta {
+        flex-direction: row; // Place time/duration and role side-by-side
+        justify-content: space-between;
+        align-items: center;
+        width: 100%; // Take full width
+     }
 
-  ion-header {
-    --background: var(--primary-gradient);
-    padding: 8px 16px;
-
-    ion-toolbar {
-      --background: transparent;
-      --border-width: 0;
-    }
-
-    ion-title {
-      color: white;
-      font-weight: 700;
-      font-size: 18px;
-      padding: 0;
-    }
-
-    ion-button {
-      --color: white;
-    }
-  }
-
-  ion-content {
-    --background: white;
-    --padding-start: 20px;
-    --padding-end: 20px;
-    --padding-top: 20px;
-    --padding-bottom: 20px;
-
-
+      .shift-role {
+          margin-left: 10px; // Add space if side-by-side
+      }
   }
 }

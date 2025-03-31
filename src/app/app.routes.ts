@@ -129,6 +129,12 @@ export const routes: Routes = [
     canActivate: [AuthGuard, EmployeeGuard],
   },
   {
+    path: 'shift-report/:employeeId',
+    loadComponent: () =>
+      import('./shared/shift-report/shift-report.page').then((m) => m.ShiftReportPage),
+    canActivate: [AuthGuard, AdminGuard],
+  },
+  {
     path: 'documents',
     loadComponent: () => import('./employer/documents/documents.page').then(m => m.AdminContractsPage)
   }, {
