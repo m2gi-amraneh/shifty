@@ -111,7 +111,7 @@ addIcons({ close }); // Add icons used in the template
                 >
                   {{ employee.displayName || employee.name }}
                 </ion-select-option>
-                 <ion-select-option *ngIf="!(employees$ | async)" disabled="true">
+                 <ion-select-option *ngIf="(employees$ | async)===null" disabled="true">
                     Loading...
                  </ion-select-option>
               </ion-select>
@@ -133,7 +133,7 @@ addIcons({ close }); // Add icons used in the template
                 >
                   {{ role.name }}
                 </ion-select-option>
-                 <ion-select-option *ngIf="!(roles$ | async)" disabled="true">
+                 <ion-select-option *ngIf="(roles$ | async) === null"  disabled="true">
                     Loading...
                  </ion-select-option>
               </ion-select>

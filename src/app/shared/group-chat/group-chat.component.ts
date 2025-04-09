@@ -1,5 +1,3 @@
-
-
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
@@ -29,7 +27,8 @@ import {
 import { ChatService, ChatMessage, ChatRoom, AccessRequest } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { UsersService } from '../../services/users.service'; // Needed for user details potentially
-import { AfterViewChecked, ChangeDetectorRef, Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core'
+// Removed AfterViewChecked import as it's no longer used
+import { ChangeDetectorRef, Component, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { user } from '@angular/fire/auth';
 
 // Add all necessary icons
@@ -652,7 +651,8 @@ addIcons({
     IonRippleEffect, IonBadge, IonSearchbar, // Ionic UX & Extras
   ]
 })
-export class GroupChatComponent implements OnInit, OnDestroy, AfterViewChecked {
+// Removed AfterViewChecked from implements list
+export class GroupChatComponent implements OnInit, OnDestroy {
   // Element References
   @ViewChild('scrollAnchor', { static: false }) private scrollAnchor!: ElementRef;
   @ViewChild('chatContent', { static: false }) private chatContent!: IonContent;
@@ -722,9 +722,10 @@ export class GroupChatComponent implements OnInit, OnDestroy, AfterViewChecked {
     console.log('All subscriptions cleaned up.');
   }
 
-  ngAfterViewChecked() {
-    // Generally avoid heavy logic here. Scrolling is handled within message loading.
-  }
+  // Removed empty ngAfterViewChecked method
+  // ngAfterViewChecked() {
+  //   // Generally avoid heavy logic here. Scrolling is handled within message loading.
+  // }
 
   // --- Data Loading & Subscriptions ---
 
@@ -1428,5 +1429,3 @@ export class GroupChatComponent implements OnInit, OnDestroy, AfterViewChecked {
   }
 
 }
-
-
