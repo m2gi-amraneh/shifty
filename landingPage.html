@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shifty - Système Moderne de Gestion des Employés</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <style>
+      :root {
+        --primary: #ffb703; /* Rich Yellow/Gold */
+        --secondary: #fb8500; /* Orange */
+        --gradient-primary: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--secondary) 100%
+        );
+        --dark: #1f2937;
+        --light: #f9fafb;
+        --medium-light: #f3f4f6;
+        --accent: #ec4899; /* Pink - Consider changing if it clashes */
+        --success: #10b981;
+        --gray: #6b7280;
+        --white: #ffffff;
+        --border-light: #e5e7eb;
+
+        --font-family: "Poppins", sans-serif;
+        --border-radius-sm: 8px;
+        --border-radius-md: 16px;
+        --border-radius-lg: 24px;
+        --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.07),
+          0 1px 2px -1px rgb(0 0 0 / 0.07);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+          0 2px 4px -2px rgb(0 0 0 / 0.07);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1),
+          0 4px 6px -4px rgb(0 0 0 / 0.07);
+        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1),
+          0 8px 10px -6px rgb(0 0 0 / 0.07);
+        --transition-speed: 0.3s;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        background-color: var(--white);
+        color: var(--dark);
+        line-height: 1.7;
+        font-family: var(--font-family);
+        font-weight: 400;
+        font-size: 16px;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      .glass {
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(12px) saturate(150%);
+        -webkit-backdrop-filter: blur(12px) saturate(150%);
+        border-radius: var(--border-radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px;
+      }
+
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -15px;
+      }
+
+      .col {
+        flex: 1 1 0px;
+        padding: 0 15px;
+        min-width: 0;
+      }
+      .row > .col {
+        margin-bottom: 30px;
+      }
+
+      .section {
+        padding: 100px 0;
+        position: relative;
+        overflow: hidden;
+      }
+      .section-alt-bg {
+        background-color: var(--light);
+      }
+
+      .align-center {
+        display: flex;
+        align-items: center;
+      }
+      .justify-center {
+        display: flex;
+        justify-content: center;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        line-height: 1.3;
+        font-weight: 600;
+        color: var(--dark);
+      }
+
+      h1 {
+        font-size: clamp(2.5rem, 5vw, 3.8rem);
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(to right, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      h2 {
+        font-size: clamp(2rem, 4vw, 2.8rem);
+        margin-bottom: 1.5rem;
+        text-align: center;
+      }
+
+      h3 {
+        font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+        margin-bottom: 1rem;
+      }
+      h4 {
+        font-size: 1.1rem;
+        margin-bottom: 0.8rem;
+        font-weight: 600;
+      }
+
+      p {
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+        color: var(--gray);
+      }
+      .lead {
+        font-size: 1.15rem;
+        font-weight: 400;
+        color: var(--gray);
+      }
+
+      .section-header {
+        text-align: center;
+        margin-bottom: 60px;
+      }
+
+      .section-header p {
+        max-width: 700px;
+        margin: 0 auto;
+      }
+
+      a {
+        color: var(--secondary); /* Orange link for contrast */
+        text-decoration: none;
+        transition: color var(--transition-speed) ease;
+      }
+      a:hover {
+        color: var(--primary); /* Lighter yellow on hover */
+      }
+
+      .btn {
+        display: inline-block;
+        background: var(--primary);
+        color: var(--dark); /* Dark text on yellow button */
+        padding: 14px 32px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all var(--transition-speed) ease;
+        border: 2px solid transparent;
+        cursor: pointer;
+        box-shadow: var(--shadow-md);
+        text-align: center;
+        font-size: 1rem;
+      }
+
+      .btn:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+        background: #e0a102; /* Darker yellow on hover */
+      }
+
+      .btn-secondary {
+        background: var(--white);
+        color: var(--secondary); /* Orange text */
+        border: 2px solid var(--secondary); /* Orange border */
+        box-shadow: none;
+      }
+
+      .btn-secondary:hover {
+        background: rgba(251, 133, 0, 0.05); /* Subtle orange bg on hover */
+        box-shadow: none;
+        transform: translateY(-2px);
+      }
+      .btn-nav {
+        padding: 10px 24px;
+        font-size: 0.9rem;
+      }
+
+      ul {
+        list-style: none;
+      }
+
+      nav {
+        padding: 15px 0;
+        position: fixed;
+        width: 100%;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        transition: all var(--transition-speed) ease;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+      nav.scrolled {
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: var(--shadow-md);
+      }
+
+      .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-weight: 700;
+        font-size: 1.8rem;
+        color: var(--secondary); /* Orange logo for contrast */
+        text-decoration: none;
+      }
+
+      .nav-links {
+        display: flex;
+        list-style: none;
+        align-items: center;
+      }
+
+      .nav-links li {
+        margin-left: 35px;
+      }
+
+      .nav-links a {
+        text-decoration: none;
+        color: var(--dark);
+        font-weight: 500;
+        transition: color var(--transition-speed) ease;
+        position: relative;
+        padding: 5px 0;
+      }
+      .nav-links a::after {
+        content: "";
+        position: absolute;
+        width: 0;
+        height: 2px;
+        bottom: 0;
+        left: 0;
+        background-color: var(--primary);
+        transition: width var(--transition-speed) ease;
+      }
+
+      .nav-links a:hover,
+      .nav-links a.active {
+        color: var(--primary);
+      }
+      .nav-links a:hover::after,
+      .nav-links a.active::after {
+        width: 100%;
+      }
+
+      .menu-toggle {
+        display: none;
+        cursor: pointer;
+        font-size: 1.5rem;
+        color: var(--dark);
+      }
+
+      .hero {
+        min-height: 100vh;
+        padding: 180px 0 120px;
+        display: flex;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(
+          135deg,
+          #fffbeb 0%,
+          #ffedd5 100%
+        ); /* Very light yellow gradient */
+      }
+
+      .hero-content {
+        max-width: 600px;
+        z-index: 2;
+      }
+      /* Override text color for hero */
+      .hero h1 {
+        color: transparent;
+      } /* Keep gradient */
+      .hero .lead {
+        color: var(--dark); /* Dark text on light hero */
+        margin-bottom: 2.5rem;
+      }
+
+      .hero-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 30px;
+      }
+
+      .hero-image {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1;
+      }
+
+      .hero-image img {
+        max-width: 100%;
+        height: auto;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-xl);
+      }
+
+      .blob {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(100px);
+        z-index: 0;
+        opacity: 0.3; /* Adjusted opacity */
+      }
+
+      .blob-1 {
+        background: var(--primary); /* Yellow blob */
+        width: 550px;
+        height: 550px;
+        top: -150px;
+        left: -150px;
+      }
+
+      .blob-2 {
+        background: var(--secondary); /* Orange blob */
+        width: 650px;
+        height: 650px;
+        bottom: -200px;
+        right: -200px;
+      }
+
+      .features {
+        background-color: var(--white);
+      }
+
+      .feature-card {
+        padding: 40px 30px;
+        margin-bottom: 30px;
+        position: relative;
+        transition: transform var(--transition-speed) ease,
+          box-shadow var(--transition-speed) ease;
+        border-radius: var(--border-radius-lg);
+        background-color: var(--white);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border-light);
+      }
+
+      .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: var(--shadow-xl);
+      }
+
+      .feature-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--gradient-primary); /* Yellow gradient */
+        border-radius: var(--border-radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 25px;
+        color: var(--dark); /* Dark icon */
+        font-size: 1.8rem;
+        flex-shrink: 0;
+      }
+
+      .feature-card h3 {
+        margin-bottom: 0.8rem;
+      }
+
+      .interfaces {
+        background-color: var(--light);
+      }
+
+      .tab-container {
+        display: flex;
+        flex-direction: column;
+        margin-top: 50px;
+        background-color: var(--white);
+        padding: 40px;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .tabs {
+        display: flex;
+        margin-bottom: 40px;
+        border-bottom: 2px solid var(--border-light);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .tab {
+        padding: 15px 30px;
+        cursor: pointer;
+        font-weight: 600;
+        position: relative;
+        transition: all var(--transition-speed) ease;
+        color: var(--gray);
+        white-space: nowrap;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+      }
+
+      .tab.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+      }
+      .tab:hover {
+        color: var(--dark);
+      }
+
+      .tab-content {
+        display: none;
+        animation: fadeIn 0.5s ease;
+      }
+
+      .tab-content.active {
+        display: flex;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .interface-details {
+        flex: 1;
+        padding-right: 50px;
+      }
+      .interface-details h3 {
+        margin-bottom: 1.5rem;
+      }
+
+      .feature-list {
+        margin-top: 20px;
+        list-style: none;
+      }
+
+      .feature-list li {
+        padding: 12px 0;
+        display: flex;
+        align-items: center;
+        color: var(--gray);
+        font-size: 0.95rem;
+      }
+
+      .feature-list li i {
+        color: var(--success);
+        font-weight: bold;
+        margin-right: 12px;
+        font-size: 1.1em;
+      }
+
+      .interface-image {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .interface-image img {
+        max-width: 100%;
+        border-radius: var(--border-radius-md);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .benefits {
+        background: linear-gradient(
+          135deg,
+          #fffbeb 0%,
+          #ffedd5 100%
+        ); /* Very light yellow gradient */
+      }
+
+      .benefit-card {
+        background: var(--white);
+        padding: 40px 30px;
+        margin-bottom: 30px;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-lg);
+        position: relative;
+        transition: transform var(--transition-speed) ease,
+          box-shadow var(--transition-speed) ease;
+        overflow: hidden;
+      }
+
+      .benefit-card:hover {
+        transform: translateY(-10px);
+        box-shadow: var(--shadow-xl);
+      }
+
+      .benefit-number {
+        position: absolute;
+        top: -10px;
+        right: 10px;
+        font-size: 5rem;
+        font-weight: 800;
+        color: rgba(255, 183, 3, 0.08); /* Faded yellow primary */
+        line-height: 1;
+        z-index: 0;
+      }
+      .benefit-card h3 {
+        position: relative;
+        z-index: 1;
+        margin-bottom: 0.8rem;
+      }
+      .benefit-card p {
+        position: relative;
+        z-index: 1;
+      }
+
+      .testimonials {
+        background-color: var(--white);
+      }
+      .testimonial-card {
+        background: var(--medium-light);
+        padding: 40px;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-md);
+        margin: 0 15px 30px;
+        position: relative;
+      }
+      .testimonial-card::before {
+        content: "\f10d";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        position: absolute;
+        top: 20px;
+        left: 30px;
+        font-size: 2rem;
+        color: rgba(0, 0, 0, 0.08);
+      }
+
+      .testimonial-content {
+        font-style: italic;
+        margin-bottom: 25px;
+        padding-left: 10px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .testimonial-author {
+        display: flex;
+        align-items: center;
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-light);
+      }
+
+      .author-image {
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-right: 15px;
+        border: 2px solid var(--white);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .author-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .author-info h4 {
+        margin: 0 0 3px 0;
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+
+      .author-info p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--gray);
+      }
+
+      .pricing {
+        background-color: var(--light);
+      }
+
+      .pricing-toggle {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 50px;
+        background-color: var(--medium-light);
+        padding: 8px;
+        border-radius: 50px;
+        display: inline-flex;
+      }
+      .pricing .justify-center {
+        margin-bottom: 50px;
+      }
+
+      .toggle-option {
+        padding: 10px 25px;
+        font-weight: 600;
+        cursor: pointer;
+        border-radius: 50px;
+        transition: all var(--transition-speed) ease;
+        color: var(--gray);
+      }
+      .toggle-option.active {
+        background-color: var(--primary);
+        color: var(--dark); /* Dark text on yellow toggle */
+        box-shadow: var(--shadow-md);
+      }
+
+      .pricing-plans {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        flex-wrap: wrap;
+      }
+
+      .pricing-plan {
+        flex: 1;
+        max-width: 360px;
+        min-width: 300px;
+        background: var(--white);
+        border-radius: var(--border-radius-lg);
+        padding: 40px;
+        box-shadow: var(--shadow-lg);
+        transition: transform var(--transition-speed) ease,
+          box-shadow var(--transition-speed) ease;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--border-light);
+        text-align: center;
+      }
+
+      .pricing-plan.popular {
+        border-color: var(--primary);
+        transform: scale(1.03);
+      }
+
+      .pricing-plan:hover {
+        transform: translateY(-10px) scale(1.01);
+        box-shadow: var(--shadow-xl);
+      }
+      .popular-tag {
+        position: absolute;
+        top: 15px;
+        right: -45px;
+        background: var(--accent); /* Keep accent or change */
+        color: white;
+        padding: 6px 50px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        transform: rotate(45deg);
+        z-index: 1;
+        letter-spacing: 0.5px;
+      }
+
+      .plan-name {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+      }
+
+      .plan-price {
+        font-size: 3.2rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 25px;
+        line-height: 1;
+      }
+
+      .plan-price span {
+        font-size: 1rem;
+        color: var(--gray);
+        font-weight: 400;
+      }
+
+      .plan-features {
+        list-style: none;
+        margin-bottom: 40px;
+        text-align: left;
+      }
+
+      .plan-features li {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--medium-light);
+        display: flex;
+        align-items: center;
+        font-size: 0.95rem;
+        color: var(--gray);
+      }
+      .plan-features li:last-child {
+        border-bottom: none;
+      }
+
+      .plan-features li i {
+        color: var(--success);
+        margin-right: 12px;
+        font-size: 1.1em;
+      }
+      .pricing-plan .btn {
+        width: 100%;
+      }
+
+      .cta {
+        padding: 80px 0;
+        background: var(--gradient-primary); /* Yellow gradient */
+        color: var(--dark); /* Dark text on yellow CTA */
+        text-align: center;
+        border-radius: var(--border-radius-lg);
+        margin: 50px auto;
+        max-width: 1140px;
+      }
+
+      .cta h2 {
+        color: var(--dark);
+        max-width: 750px;
+        margin: 0 auto 25px;
+      }
+
+      .cta p {
+        color: #4b5563; /* Slightly lighter dark gray */
+        max-width: 650px;
+        margin: 0 auto 40px;
+        opacity: 0.9;
+        font-size: 1.1rem;
+      }
+
+      .cta .btn {
+        background: var(--white);
+        color: var(--secondary); /* Orange text */
+        font-weight: 700;
+        border: 2px solid var(--border-light);
+      }
+      .cta .btn:hover {
+        background-color: var(--light);
+        color: var(--secondary);
+        transform: translateY(-3px) scale(1.02);
+      }
+
+      .faq {
+        background-color: var(--white);
+      }
+
+      .accordion {
+        margin-top: 50px;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .accordion-item {
+        margin-bottom: 15px;
+        border-radius: var(--border-radius-md);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-light);
+        background-color: var(--white);
+      }
+      .accordion-item.active {
+        box-shadow: var(--shadow-md);
+      }
+
+      .accordion-header {
+        padding: 20px 25px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: background-color var(--transition-speed) ease;
+      }
+      .accordion-header:hover {
+        background-color: var(--medium-light);
+      }
+
+      .accordion-header i {
+        transition: transform var(--transition-speed) ease;
+        font-size: 0.9em;
+        color: var(--primary);
+      }
+      .accordion-item.active .accordion-header i {
+        transform: rotate(45deg);
+      }
+
+      .accordion-content {
+        background: var(--white);
+        padding: 0 25px;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s ease, padding 0.4s ease;
+      }
+
+      .accordion-content p {
+        padding: 20px 0;
+        margin-bottom: 0;
+        color: var(--gray);
+        font-size: 0.95rem;
+      }
+
+      .accordion-item.active .accordion-content {
+        max-height: 300px;
+        padding-top: 0;
+        padding-bottom: 20px;
+      }
+
+      footer {
+        background: var(--dark);
+        color: rgba(255, 255, 255, 0.7);
+        padding: 80px 0 40px;
+        font-size: 0.95rem;
+      }
+
+      .footer-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 40px;
+      }
+
+      .footer-about .footer-logo {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        display: inline-block;
+        background: linear-gradient(to right, var(--primary), var(--secondary));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .footer-about p {
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 25px;
+      }
+
+      .social-links a {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1.4rem;
+        margin-right: 15px;
+        transition: color var(--transition-speed) ease;
+      }
+      .social-links a:hover {
+        color: var(--white);
+      }
+
+      .footer-links h3 {
+        color: var(--white);
+        margin-bottom: 25px;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+
+      .footer-links ul li {
+        margin-bottom: 12px;
+      }
+
+      .footer-links ul li a {
+        color: rgba(255, 255, 255, 0.7);
+        text-decoration: none;
+        transition: color var(--transition-speed) ease,
+          padding-left var(--transition-speed) ease;
+      }
+
+      .footer-links ul li a:hover {
+        color: var(--white);
+        padding-left: 5px;
+      }
+
+      .copyright {
+        text-align: center;
+        margin-top: 60px;
+        padding-top: 30px;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        font-size: 0.9rem;
+        opacity: 0.8;
+      }
+
+      @media (max-width: 992px) {
+        h1 {
+          font-size: clamp(2.2rem, 5vw, 3rem);
+        }
+        h2 {
+          font-size: clamp(1.8rem, 4vw, 2.2rem);
+        }
+        .section {
+          padding: 80px 0;
+        }
+
+        .row > .col:not(:last-child) {
+          margin-bottom: 30px;
+        }
+
+        .hero-content {
+          text-align: center;
+          max-width: 100%;
+        }
+        .hero .row {
+          flex-direction: column;
+        }
+        .hero-image {
+          justify-content: center;
+          margin-top: 50px;
+          max-width: 500px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .hero-buttons {
+          justify-content: center;
+        }
+
+        .tab-content.active {
+          flex-direction: column;
+        }
+        .interface-details {
+          padding-right: 0;
+        }
+        .interface-image {
+          margin-top: 40px;
+        }
+
+        .pricing-plans {
+          gap: 20px;
+        }
+        .pricing-plan {
+          max-width: 400px;
+        }
+        .pricing-plan.popular {
+          transform: scale(1);
+        }
+        .pricing-plan:hover {
+          transform: translateY(-5px) scale(1);
+        }
+
+        .footer-container {
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+      }
+
+      @media (max-width: 768px) {
+        .nav-links {
+          display: none;
+          flex-direction: column;
+          position: absolute;
+          top: 70px;
+          left: 0;
+          width: 100%;
+          background-color: rgba(255, 255, 255, 0.98);
+          box-shadow: var(--shadow-md);
+          padding: 20px 0;
+          text-align: center;
+        }
+        .nav-links.active {
+          display: flex;
+        }
+        .nav-links li {
+          margin: 15px 0;
+          margin-left: 0;
+        }
+        .menu-toggle {
+          display: block;
+        }
+
+        .pricing-plans {
+          flex-direction: column;
+          align-items: center;
+        }
+        .pricing-plan {
+          margin-bottom: 30px;
+          width: 90%;
+          max-width: 400px;
+        }
+
+        .cta h2 {
+          font-size: 1.8rem;
+        }
+
+        .footer-container {
+          gap: 30px;
+        }
+        .footer-about,
+        .footer-links {
+          text-align: center;
+        }
+        .social-links {
+          text-align: center;
+          margin-top: 15px;
+        }
+      }
+
+      @media (max-width: 576px) {
+        body {
+          font-size: 15px;
+        }
+        .container {
+          padding: 0 15px;
+        }
+        h1 {
+          font-size: clamp(1.8rem, 6vw, 2.2rem);
+        }
+        h2 {
+          font-size: clamp(1.5rem, 5vw, 1.8rem);
+        }
+        .btn {
+          padding: 12px 25px;
+          font-size: 0.9rem;
+        }
+        .hero {
+          padding: 140px 0 80px;
+        }
+        .feature-card,
+        .benefit-card,
+        .testimonial-card,
+        .pricing-plan,
+        .accordion-item {
+          padding: 30px 20px;
+        }
+        .plan-price {
+          font-size: 2.8rem;
+        }
+        .footer-container {
+          grid-template-columns: 1fr;
+          text-align: center;
+        }
+        .footer-links ul {
+          padding-left: 0;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav id="navbar">
+      <div class="container nav-container">
+        <a href="#" class="logo">Shifty</a>
+        <div class="menu-toggle" id="mobile-menu">
+          <i class="fas fa-bars"></i>
+        </div>
+        <ul class="nav-links" id="nav-menu">
+          <li><a href="#features" class="nav-link">Fonctionnalités</a></li>
+          <li><a href="#interfaces" class="nav-link">Interfaces</a></li>
+          <li><a href="#benefits" class="nav-link">Avantages</a></li>
+          <li><a href="#testimonials" class="nav-link">Témoignages</a></li>
+          <li><a href="#pricing" class="nav-link">Tarifs</a></li>
+          <li><a href="#faq" class="nav-link">FAQ</a></li>
+          <li><a href="#cta" class="btn btn-nav">Commencer</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <section class="hero section" id="home">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <div class="container">
+        <div class="row align-center">
+          <div class="col hero-content">
+            <h1>Gestion Intelligente des Employés, Réinventée.</h1>
+            <p class="lead">
+              Une solution complète et mobile-first pour la gestion moderne des
+              effectifs. Simplifiez le suivi du temps, la planification, la
+              gestion des absences et le traitement numérique des contrats grâce
+              à notre application intuitive à double interface.
+            </p>
+            <div class="hero-buttons">
+              <a href="#pricing" class="btn">Essai Gratuit</a>
+              <a href="#contact" class="btn btn-secondary">Réserver une Démo</a>
+            </div>
+          </div>
+          <div class="col hero-image">
+            <img
+              src="img/admin_dashboard.PNG"
+              alt="Tableau de bord Shifty sur plusieurs appareils"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features section" id="features">
+      <div class="container">
+        <div class="section-header">
+          <h2>Fonctionnalités Puissantes Conçues pour la Croissance</h2>
+          <p>
+            Shifty fournit un ensemble complet d'outils conçus pour simplifier
+            la complexité et gérer efficacement vos effectifs.
+          </p>
+        </div>
+        <div class="row">
+          <div class="col">
+            <div class="feature-card">
+              <div class="feature-icon"><i class="fas fa-id-badge"></i></div>
+              <h3>Pointage & Suivi du Temps</h3>
+              <p>
+                Suivez la présence des employés avec précision grâce à la saisie
+                de codes personnels. Surveillez les pointages en temps réel.
+              </p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-calendar-alt"></i>
+              </div>
+              <h3>Gestion Intuitive des Plannings</h3>
+              <p>
+                Créez, attribuez et gérez les quarts de travail sans effort avec
+                une interface de calendrier visuelle et le glisser-déposer.
+              </p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="feature-card">
+              <div class="feature-icon"><i class="fas fa-user-clock"></i></div>
+              <h3>Gestion Simplifiée des Absences</h3>
+              <p>
+                Examinez et traitez facilement les demandes d'absence des
+                employés. Suivez les soldes de congés avec un système
+                automatisé.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <div class="feature-card">
+              <div class="feature-icon"><i class="fas fa-door-closed"></i></div>
+              <h3>Planification des Fermetures</h3>
+              <p>
+                Définissez les dates de fermeture de l'entreprise ou du service
+                pour les vacances et événements, clairement visualisées sur les
+                plannings.
+              </p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-file-signature"></i>
+              </div>
+              <h3>Gestion des Contrats Numériques</h3>
+              <p>
+                Créez, personnalisez, distribuez et suivez les contrats des
+                employés numériquement avec des signatures électroniques
+                sécurisées.
+              </p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="feature-card">
+              <div class="feature-icon"><i class="fas fa-chart-pie"></i></div>
+              <h3>Rapports Détaillés</h3>
+              <p>
+                Générez des rapports complets sur les heures de travail, les
+                absences et les performances. Exportez les données au format
+                PDF.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="interfaces section section-alt-bg" id="interfaces">
+      <div class="container">
+        <div class="section-header">
+          <h2>Une Expérience Adaptée à Chacun</h2>
+          <p>
+            Shifty propose des interfaces dédiées, basées sur les rôles et
+            optimisées pour les administrateurs et les employés.
+          </p>
+        </div>
+        <div class="tab-container">
+          <div class="tabs">
+            <div class="tab active" data-tab="employer">
+              Tableau de Bord Employeur
+            </div>
+            <div class="tab" data-tab="employee">Portail Employé</div>
+          </div>
+
+          <div class="tab-content active" id="employer-content">
+            <div class="row align-center">
+              <div class="col interface-details">
+                <h3>Contrôle Administratif Complet</h3>
+                <p>
+                  Obtenez une visibilité totale et gérez l'ensemble de vos
+                  effectifs depuis un tableau de bord centralisé et puissant.
+                </p>
+                <ul class="feature-list">
+                  <li>
+                    <i class="fas fa-check"></i> Suivi des présences en temps
+                    réel
+                  </li>
+                  <li>
+                    <i class="fas fa-check"></i> Créateur de planning visuel &
+                    affectation
+                  </li>
+                  <li>
+                    <i class="fas fa-check"></i> Flux d'approbation des demandes
+                    d'absence
+                  </li>
+                  <li>
+                    <i class="fas fa-check"></i> Génération et distribution de
+                    contrats
+                  </li>
+                  <li>
+                    <i class="fas fa-check"></i> Gestion des périodes de
+                    fermeture
+                  </li>
+                  <li>
+                    <i class="fas fa-check"></i> Suite de rapports complète
+                  </li>
+                </ul>
+              </div>
+              <div class="col interface-image">
+                <img
+                  src="img/teamSshedules.PNG"
+                  alt="Interface Tableau de Bord
+                Employeur"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-content" id="employee-content">
+            <div class="row align-center">
+              <div class="col interface-details">
+                <h3>Autonomisez Vos Employés</h3>
+                <p>
+                  Fournissez à votre équipe un portail mobile-first intuitif
+                  pour gérer leur vie professionnelle sans effort.
+                </p>
+                <ul class="feature-list">
+                  <li>
+                    <i class="fas fa-check"></i> Vue du planning personnel &
+                    synchro calendrier
+                  </li>
+                  <li>
+                    <i class="fas fa-check"></i> Soumission facile des demandes
+                    d'absence
+                  </li>
+                  <li>
+                    <i class="fas fa-check"></i> Signature et accès aux contrats
+                    numériques
+                  </li>
+                  <li>
+                    <i class="fas fa-check"></i> Téléchargement des rapports
+                    d'heures
+                  </li>
+                  <li>
+                    <i class="fas fa-check"></i> Affichage du solde de congés
+                    restants
+                  </li>
+                  <li>
+                    <i class="fas fa-check"></i> Notifications de changement de
+                    planning
+                  </li>
+                </ul>
+              </div>
+              <div class="col interface-image">
+                <img
+                  src="img/employee dashboard.PNG"
+                  alt="Interface Portail Employé"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="benefits section" id="benefits">
+      <div class="container">
+        <div class="section-header">
+          <h2>Libérez le Potentiel de Votre Entreprise</h2>
+          <p>
+            Découvrez comment Shifty améliore l'efficacité, réduit les coûts et
+            augmente la satisfaction dans votre organisation.
+          </p>
+        </div>
+        <div class="row">
+          <div class="col">
+            <div class="benefit-card">
+              <div class="benefit-number">01</div>
+              <h3>Augmentez la Productivité</h3>
+              <p>
+                Automatisez les tâches de routine, réduisez les erreurs
+                manuelles et libérez un temps précieux pour les initiatives RH
+                stratégiques.
+              </p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="benefit-card">
+              <div class="benefit-number">02</div>
+              <h3>Améliorez la Conformité</h3>
+              <p>
+                Conservez des enregistrements numériques précis et accessibles
+                pour le temps, la présence et les contrats, réduisant les
+                risques de non-conformité.
+              </p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="benefit-card">
+              <div class="benefit-number">03</div>
+              <h3>Améliorez la Transparence</h3>
+              <p>
+                Favorisez la confiance avec une visibilité claire sur les
+                plannings, les soldes de congés et les documents importants pour
+                tous les employés.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <div class="benefit-card">
+              <div class="benefit-number">04</div>
+              <h3>Réduisez les Coûts</h3>
+              <p>
+                Minimisez les heures supplémentaires, optimisez les niveaux de
+                personnel et diminuez considérablement les frais administratifs.
+              </p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="benefit-card">
+              <div class="benefit-number">05</div>
+              <h3>Stimulez le Moral des Employés</h3>
+              <p>
+                Offrez une expérience moderne et conviviale qui responsabilise
+                les employés et améliore la satisfaction globale au travail.
+              </p>
+            </div>
+          </div>
+          <div class="col">
+            <div class="benefit-card">
+              <div class="benefit-number">06</div>
+              <h3>Décisions Basées sur les Données</h3>
+              <p>
+                Exploitez des rapports et des analyses pertinents pour prendre
+                des décisions éclairées concernant la planification et les
+                opérations.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="testimonials section" id="testimonials">
+      <div class="container">
+        <div class="section-header">
+          <h2>Approuvé par les Entreprises en Croissance</h2>
+          <p>
+            Écoutez directement les clients qui ont transformé leur gestion du
+            personnel avec Shifty.
+          </p>
+        </div>
+        <div class="row">
+          <div class="col">
+            <div class="testimonial-card">
+              <div class="testimonial-content">
+                <p>
+                  "Shifty a révolutionné notre gestion des plannings et des
+                  congés. Le portail employé est incroyablement intuitif, notre
+                  équipe l'a adopté instantanément. Le temps administratif
+                  économisé est significatif !"
+                </p>
+              </div>
+              <div class="testimonial-author">
+                <div class="author-image">
+                  <img
+                    src="https://picsum.photos/seed/person1/55/55"
+                    alt="Sarah Chen"
+                  />
+                </div>
+                <div class="author-info">
+                  <h4>Sarah Chen</h4>
+                  <p>Responsable RH, Innovate Solutions</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="testimonial-card">
+              <div class="testimonial-content">
+                <p>
+                  "La fonctionnalité de contrat numérique change la donne.
+                  L'intégration est plus fluide, la conformité plus simple, et
+                  nous avons éliminé des montagnes de paperasse. Vivement
+                  recommandé !"
+                </p>
+              </div>
+              <div class="testimonial-author">
+                <div class="author-image">
+                  <img
+                    src="https://picsum.photos/seed/person2/55/55"
+                    alt="David Rodriguez"
+                  />
+                </div>
+                <div class="author-info">
+                  <h4>David Rodriguez</h4>
+                  <p>Directeur des Opérations, BuildRight Co.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="testimonial-card">
+              <div class="testimonial-content">
+                <p>
+                  "Gérer plusieurs équipes avec différents horaires était
+                  chaotique. Le planificateur visuel de Shifty apporte de la
+                  clarté et a considérablement réduit les erreurs et les
+                  conflits de planning."
+                </p>
+              </div>
+              <div class="testimonial-author">
+                <div class="author-image">
+                  <img
+                    src="https://picsum.photos/seed/person3/55/55"
+                    alt="Jessica Miller"
+                  />
+                </div>
+                <div class="author-info">
+                  <h4>Jessica Miller</h4>
+                  <p>Administratrice de Clinique, HealthPoint</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pricing section section-alt-bg" id="pricing">
+      <div class="container">
+        <div class="section-header">
+          <h2>Tarification Simple et Transparente</h2>
+          <p>
+            Choisissez le plan qui évolue avec votre entreprise. Commencez
+            gratuitement, mettez à niveau à tout moment.
+          </p>
+        </div>
+        <div class="justify-center">
+          <div class="pricing-toggle" id="pricing-toggle">
+            <div class="toggle-option active" data-period="monthly">
+              Mensuel
+            </div>
+            <div class="toggle-option" data-period="yearly">
+              Annuel (Économisez 15%)
+            </div>
+          </div>
+        </div>
+
+        <div class="pricing-plans">
+          <div class="pricing-plan monthly">
+            <h3 class="plan-name">Starter</h3>
+            <p class="plan-price">19 €<span>/mois</span></p>
+            <ul class="plan-features">
+              <li><i class="fas fa-check"></i> Jusqu'à 25 Employés</li>
+              <li><i class="fas fa-check"></i> Temps & Présence</li>
+              <li><i class="fas fa-check"></i> Planning de base</li>
+              <li><i class="fas fa-check"></i> Portail Employé</li>
+              <li><i class="fas fa-check"></i> Support par Email</li>
+            </ul>
+            <a href="#" class="btn btn-secondary">Choisir ce Plan</a>
+          </div>
+
+          <div class="pricing-plan popular monthly">
+            <span class="popular-tag">Le plus populaire</span>
+            <h3 class="plan-name">Pro</h3>
+            <p class="plan-price">49 €<span>/mois</span></p>
+            <ul class="plan-features">
+              <li><i class="fas fa-check"></i> Jusqu'à 100 Employés</li>
+              <li><i class="fas fa-check"></i> Toutes les fonctions Starter</li>
+              <li><i class="fas fa-check"></i> Planning avancé</li>
+              <li><i class="fas fa-check"></i> Gestion des Absences</li>
+              <li><i class="fas fa-check"></i> Rapports de base</li>
+              <li><i class="fas fa-check"></i> Support Email Prioritaire</li>
+            </ul>
+            <a href="#" class="btn">Choisir ce Plan</a>
+          </div>
+
+          <div class="pricing-plan monthly">
+            <h3 class="plan-name">Business</h3>
+            <p class="plan-price">99 €<span>/mois</span></p>
+            <ul class="plan-features">
+              <li><i class="fas fa-check"></i> Jusqu'à 250 Employés</li>
+              <li><i class="fas fa-check"></i> Toutes les fonctions Pro</li>
+              <li><i class="fas fa-check"></i> Contrats Numériques</li>
+              <li><i class="fas fa-check"></i> Rapports avancés</li>
+              <li><i class="fas fa-check"></i> Gestion des Fermetures</li>
+              <li><i class="fas fa-check"></i> Support Téléphone & Email</li>
+            </ul>
+            <a href="#" class="btn btn-secondary">Choisir ce Plan</a>
+          </div>
+
+          <div class="pricing-plan yearly" style="display: none">
+            <h3 class="plan-name">Starter</h3>
+            <p class="plan-price">190 €<span>/an</span></p>
+            <p
+              style="
+                font-size: 0.9rem;
+                color: var(--success);
+                margin-top: -15px;
+                margin-bottom: 20px;
+              "
+            >
+              Économisez 38 € !
+            </p>
+            <ul class="plan-features">
+              <li><i class="fas fa-check"></i> Jusqu'à 25 Employés</li>
+              <li><i class="fas fa-check"></i> Temps & Présence</li>
+              <li><i class="fas fa-check"></i> Planning de base</li>
+              <li><i class="fas fa-check"></i> Portail Employé</li>
+              <li><i class="fas fa-check"></i> Support par Email</li>
+            </ul>
+            <a href="#" class="btn btn-secondary">Choisir ce Plan</a>
+          </div>
+
+          <div class="pricing-plan popular yearly" style="display: none">
+            <span class="popular-tag">Le plus populaire</span>
+            <h3 class="plan-name">Pro</h3>
+            <p class="plan-price">490 €<span>/an</span></p>
+            <p
+              style="
+                font-size: 0.9rem;
+                color: var(--success);
+                margin-top: -15px;
+                margin-bottom: 20px;
+              "
+            >
+              Économisez 98 € !
+            </p>
+            <ul class="plan-features">
+              <li><i class="fas fa-check"></i> Jusqu'à 100 Employés</li>
+              <li><i class="fas fa-check"></i> Toutes les fonctions Starter</li>
+              <li><i class="fas fa-check"></i> Planning avancé</li>
+              <li><i class="fas fa-check"></i> Gestion des Absences</li>
+              <li><i class="fas fa-check"></i> Rapports de base</li>
+              <li><i class="fas fa-check"></i> Support Email Prioritaire</li>
+            </ul>
+            <a href="#" class="btn">Choisir ce Plan</a>
+          </div>
+
+          <div class="pricing-plan yearly" style="display: none">
+            <h3 class="plan-name">Business</h3>
+            <p class="plan-price">990 €<span>/an</span></p>
+            <p
+              style="
+                font-size: 0.9rem;
+                color: var(--success);
+                margin-top: -15px;
+                margin-bottom: 20px;
+              "
+            >
+              Économisez 198 € !
+            </p>
+            <ul class="plan-features">
+              <li><i class="fas fa-check"></i> Jusqu'à 250 Employés</li>
+              <li><i class="fas fa-check"></i> Toutes les fonctions Pro</li>
+              <li><i class="fas fa-check"></i> Contrats Numériques</li>
+              <li><i class="fas fa-check"></i> Rapports avancés</li>
+              <li><i class="fas fa-check"></i> Gestion des Fermetures</li>
+              <li><i class="fas fa-check"></i> Support Téléphone & Email</li>
+            </ul>
+            <a href="#" class="btn btn-secondary">Choisir ce Plan</a>
+          </div>
+        </div>
+        <p style="text-align: center; margin-top: 40px; color: var(--gray)">
+          Besoin de plus ? <a href="#contact">Contactez-nous</a> pour les
+          solutions Entreprise.
+        </p>
+      </div>
+    </section>
+
+    <section class="cta section" id="cta">
+      <div class="container">
+        <h2>Prêt à Simplifier Votre Gestion du Personnel ?</h2>
+        <p>
+          Commencez votre essai gratuit de 14 jours aujourd'hui. Aucune carte de
+          crédit requise. Découvrez la différence que Shifty peut faire pour
+          votre entreprise.
+        </p>
+        <a href="#" class="btn">Commencer l'Essai Gratuit</a>
+      </div>
+    </section>
+
+    <section class="faq section" id="faq">
+      <div class="container">
+        <div class="section-header">
+          <h2>Questions Fréquemment Posées</h2>
+          <p>
+            Vous avez des questions ? Nous avons des réponses. Si vous ne
+            trouvez pas votre question ici, n'hésitez pas à nous contacter.
+          </p>
+        </div>
+        <div class="accordion">
+          <div class="accordion-item">
+            <div class="accordion-header">
+              <span>Quel type de support offrez-vous ?</span>
+              <i class="fas fa-plus"></i>
+            </div>
+            <div class="accordion-content">
+              <p>
+                Nous offrons un support par email pour tous les plans. Les plans
+                Pro et Business incluent un support email prioritaire, et le
+                plan Business inclut un support téléphonique pendant les heures
+                ouvrables standard.
+              </p>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <div class="accordion-header">
+              <span>Puis-je changer de plan plus tard ?</span>
+              <i class="fas fa-plus"></i>
+            </div>
+            <div class="accordion-content">
+              <p>
+                Absolument ! Vous pouvez changer de plan à la hausse ou à la
+                baisse à tout moment directement depuis les paramètres de votre
+                compte. Les modifications seront facturées au prorata.
+              </p>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <div class="accordion-header">
+              <span>Mes données sont-elles en sécurité avec Shifty ?</span>
+              <i class="fas fa-plus"></i>
+            </div>
+            <div class="accordion-content">
+              <p>
+                Oui, la sécurité des données est notre priorité absolue. Nous
+                utilisons un cryptage standard, une infrastructure cloud
+                sécurisée (Firebase) et un contrôle d'accès basé sur les rôles
+                pour protéger vos informations.
+              </p>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <div class="accordion-header">
+              <span>Shifty s'intègre-t-il aux systèmes de paie ?</span>
+              <i class="fas fa-plus"></i>
+            </div>
+            <div class="accordion-content">
+              <p>
+                Nous proposons des options d'exportation de données (comme les
+                rapports PDF des heures de travail) utilisables avec la plupart
+                des systèmes de paie. Les intégrations directes sont prévues
+                dans notre feuille de route future.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer id="contact">
+      <div class="container">
+        <div class="footer-container">
+          <div class="footer-about">
+            <a href="#" class="footer-logo">Shifty</a>
+            <p>
+              Modernisation de la gestion du personnel pour les entreprises de
+              toutes tailles. Simplifiez la planification, le suivi et la
+              conformité.
+            </p>
+            <div class="social-links">
+              <a href="#" aria-label="Twitter"
+                ><i class="fab fa-twitter"></i
+              ></a>
+              <a href="#" aria-label="LinkedIn"
+                ><i class="fab fa-linkedin-in"></i
+              ></a>
+              <a href="#" aria-label="Facebook"
+                ><i class="fab fa-facebook-f"></i
+              ></a>
+            </div>
+          </div>
+          <div class="footer-links">
+            <h3>Liens Rapides</h3>
+            <ul>
+              <li><a href="#features">Fonctionnalités</a></li>
+              <li><a href="#pricing">Tarifs</a></li>
+              <li><a href="#testimonials">Témoignages</a></li>
+              <li><a href="#">Demander une Démo</a></li>
+              <li><a href="#">Connexion</a></li>
+            </ul>
+          </div>
+          <div class="footer-links">
+            <h3>Ressources</h3>
+            <ul>
+              <li><a href="#faq">FAQ</a></li>
+              <li><a href="#">Blog</a></li>
+              <li><a href="#">Centre d'Aide</a></li>
+              <li><a href="#">Documentation API</a></li>
+              <li><a href="#">Statut</a></li>
+            </ul>
+          </div>
+          <div class="footer-links">
+            <h3>Légal</h3>
+            <ul>
+              <li><a href="#">Politique de Confidentialité</a></li>
+              <li><a href="#">Conditions d'Utilisation</a></li>
+              <li><a href="#">Politique de Cookies</a></li>
+              <li><a href="#">Sécurité</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="copyright">
+          © 2024 Shifty par Amrane Hacene. Tous droits réservés.
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      const navbar = document.getElementById("navbar");
+      window.onscroll = () => {
+        if (window.scrollY > 50) {
+          navbar.classList.add("scrolled");
+        } else {
+          navbar.classList.remove("scrolled");
+        }
+      };
+
+      const mobileMenuToggle = document.getElementById("mobile-menu");
+      const navMenu = document.getElementById("nav-menu");
+      if (mobileMenuToggle && navMenu) {
+        mobileMenuToggle.addEventListener("click", () => {
+          navMenu.classList.toggle("active");
+          const icon = mobileMenuToggle.querySelector("i");
+          if (icon.classList.contains("fa-bars")) {
+            icon.classList.remove("fa-bars");
+            icon.classList.add("fa-times");
+          } else {
+            icon.classList.remove("fa-times");
+            icon.classList.add("fa-bars");
+          }
+        });
+        navMenu.querySelectorAll(".nav-link, .btn-nav").forEach((link) => {
+          link.addEventListener("click", () => {
+            if (navMenu.classList.contains("active")) {
+              navMenu.classList.remove("active");
+              const icon = mobileMenuToggle.querySelector("i");
+              icon.classList.remove("fa-times");
+              icon.classList.add("fa-bars");
+            }
+          });
+        });
+      }
+
+      const tabs = document.querySelectorAll(".tab");
+      const tabContents = document.querySelectorAll(".tab-content");
+
+      tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+          const target = tab.getAttribute("data-tab");
+
+          tabs.forEach((t) => t.classList.remove("active"));
+          tabContents.forEach((c) => c.classList.remove("active"));
+
+          tab.classList.add("active");
+          const targetContent = document.getElementById(`${target}-content`);
+          if (targetContent) {
+            targetContent.classList.add("active");
+          }
+        });
+      });
+
+      const accordionItems = document.querySelectorAll(".accordion-item");
+
+      accordionItems.forEach((item) => {
+        const header = item.querySelector(".accordion-header");
+        const content = item.querySelector(".accordion-content");
+        const icon = header ? header.querySelector("i") : null;
+
+        if (header && content && icon) {
+          header.addEventListener("click", () => {
+            const isActive = item.classList.contains("active");
+
+            if (isActive) {
+              item.classList.remove("active");
+              content.style.maxHeight = null;
+              icon.classList.remove("fa-times");
+              icon.classList.add("fa-plus");
+            } else {
+              item.classList.add("active");
+              content.style.maxHeight = content.scrollHeight + "px";
+              icon.classList.remove("fa-plus");
+              icon.classList.add("fa-times");
+            }
+          });
+        }
+      });
+
+      const pricingToggle = document.getElementById("pricing-toggle");
+      const toggleOptions = pricingToggle
+        ? pricingToggle.querySelectorAll(".toggle-option")
+        : [];
+      const monthlyPlans = document.querySelectorAll(".pricing-plan.monthly");
+      const yearlyPlans = document.querySelectorAll(".pricing-plan.yearly");
+
+      if (pricingToggle && toggleOptions.length > 0) {
+        toggleOptions.forEach((option) => {
+          option.addEventListener("click", () => {
+            const period = option.getAttribute("data-period");
+
+            toggleOptions.forEach((opt) => opt.classList.remove("active"));
+            option.classList.add("active");
+
+            if (period === "yearly") {
+              monthlyPlans.forEach((plan) => (plan.style.display = "none"));
+              yearlyPlans.forEach((plan) => (plan.style.display = "block"));
+            } else {
+              monthlyPlans.forEach((plan) => (plan.style.display = "block"));
+              yearlyPlans.forEach((plan) => (plan.style.display = "none"));
+            }
+          });
+        });
+      }
+
+      const sections = document.querySelectorAll("section[id]");
+      const navLinks = document.querySelectorAll(".nav-link");
+
+      const makeLinksInactive = () => {
+        navLinks.forEach((link) => link.classList.remove("active"));
+      };
+
+      window.addEventListener("scroll", () => {
+        let current = "";
+        sections.forEach((section) => {
+          const sectionTop = section.offsetTop;
+          const sectionHeight = section.clientHeight;
+          const navHeight = navbar.offsetHeight || 70;
+          if (pageYOffset >= sectionTop - navHeight * 1.5) {
+            current = section.getAttribute("id");
+          }
+        });
+
+        makeLinksInactive();
+
+        navLinks.forEach((link) => {
+          const href = link.getAttribute("href");
+          if (href && href.includes(current) && current !== "") {
+            link.classList.add("active");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

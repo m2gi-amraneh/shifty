@@ -51,6 +51,8 @@ export class AuthService {
       // Attendez que l'application soit complètement chargée
       document.addEventListener('deviceready', () => {
         GoogleAuth.initialize();
+        FacebookLogin.initialize({ appId: '1907280960089941' });
+
       }, false);
     }
   }
@@ -175,10 +177,17 @@ export class AuthService {
   }
 
   async signInWithFacebook(): Promise<any> {
+    if (this.isFacebookLoginInProgress) {
+      console.log("Facebook login is already in progress.");
+      return; // Prevent overlapping calls
+    }
+
+    this.isFacebookLoginInProgress = true;
+
     try {
       if (Capacitor.isNativePlatform()) {
         // Initialize Facebook Login
-        await FacebookLogin.initialize({ appId: 'YOUR_FACEBOOK_APP_ID' });
+        await FacebookLogin.initialize({ appId: '1907280960089941' });
 
         // Perform Facebook Login
         const result = await FacebookLogin.login({ permissions: ['email', 'public_profile'] });
@@ -228,8 +237,12 @@ export class AuthService {
     } catch (error) {
       console.error('Facebook Sign-In Error:', error);
       throw error;
+    } finally {
+      // Reset the flag after login attempt
+      this.isFacebookLoginInProgress = false;
     }
   }
+  private isFacebookLoginInProgress = false;
 
   logout(): Promise<void> {
     // Sign out from Google Auth if on native platform

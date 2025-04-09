@@ -108,15 +108,15 @@ addIcons({
             </div>
 
             <div class="social-login">
-              <ion-button class="google-btn" (click)="loginWithGoogle()">
+                <ion-button class="google-btn" (click)="loginWithGoogle()">
                 <ion-icon name="logo-google" slot="start"></ion-icon>
                 Sign in with Google
               </ion-button>
 
-              <ion-button class="facebook-btn" (click)="loginWithFacebook()">
+           <!--       <ion-button class="facebook-btn" (click)="loginWithFacebook()">
                 <ion-icon name="logo-facebook" slot="start"></ion-icon>
-                Sign in with Facebook
-              </ion-button>
+              Sign in with Facebook
+              </ion-button> -->
             </div>
           </form>
 

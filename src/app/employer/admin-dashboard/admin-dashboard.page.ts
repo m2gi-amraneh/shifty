@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -15,6 +14,20 @@ import {
   calendarClearOutline,
   chatbubbleEllipsesOutline
 } from 'ionicons/icons';
+import {
+  IonContent,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
+  IonButton,
+  IonIcon,
+  IonCard,
+  IonCardHeader,
+  IonCardTitle,
+  IonCardSubtitle,
+
+} from '@ionic/angular/standalone';
 
 // Add the icons to use them
 addIcons({
@@ -28,24 +41,14 @@ addIcons({
   calendarClearOutline,
   chatbubbleEllipsesOutline
 });
-import {
-  IonContent,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonButtons,
-  IonButton,
-  IonIcon,
-  IonCard,
-  IonCardHeader,
-  IonCardTitle,
-  IonCardSubtitle
-} from '@ionic/angular/standalone';
+
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule,
+  imports: [
+    CommonModule,
     RouterModule,
+    // IonicModule, // Or list specific components
     IonContent,
     IonHeader,
     IonToolbar,
@@ -56,231 +59,235 @@ import {
     IonCard,
     IonCardHeader,
     IonCardTitle,
-    IonCardSubtitle,],
+    IonCardSubtitle,
+  ],
   template: `
+    <ion-header class="ion-no-border modern-header">
+      <ion-toolbar>
+        <ion-title>Admin Portal</ion-title>
+        <ion-buttons slot="end">
+          <ion-button fill="clear" (click)="logout()" class="logout-button">
+            <ion-icon slot="start" name="log-out-outline"></ion-icon>
+            Logout
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+
     <ion-content [fullscreen]="true">
-      <ion-header class="ion-no-border">
-        <ion-toolbar>
-          <ion-title size="large">Admin Portal</ion-title>
-          <ion-buttons slot="end">
-            <ion-button (click)="logout()" class="logout-button">
-              <ion-icon slot="start" name="log-out-outline"></ion-icon>
-              Logout
-            </ion-button>
-          </ion-buttons>
-        </ion-toolbar>
-      </ion-header>
-
       <div class="dashboard-grid">
-        <ion-card class="dashboard-card" button routerLink="/scan-qr">
-          <div class="card-gradient qr-gradient"></div>
-          <ion-icon name="qr-code-outline" class="card-icon"></ion-icon>
-          <ion-card-header>
+        <!-- Card 1: Badge Station -->
+        <ion-card class="dashboard-card card-primary" button routerLink="/scan-qr">
+          <ion-icon name="qr-code-outline" class="card-icon" color="primary"></ion-icon>
+          <ion-card-header class="card-content">
             <ion-card-title>Badge station</ion-card-title>
-            <ion-card-subtitle>Device Verification</ion-card-subtitle>
           </ion-card-header>
         </ion-card>
 
-        <ion-card class="dashboard-card" button routerLink="/manage-employees">
-          <div class="card-gradient team-gradient"></div>
-          <ion-icon name="people-outline" class="card-icon"></ion-icon>
-          <ion-card-header>
-            <ion-card-title>Team Management</ion-card-title>
-            <ion-card-subtitle>Employee Database</ion-card-subtitle>
+        <!-- Card 2: Team Management -->
+        <ion-card class="dashboard-card card-danger" button routerLink="/manage-employees">
+          <ion-icon name="people-outline" class="card-icon" color="danger"></ion-icon>
+           <ion-card-header class="card-content">
+            <ion-card-title>Team</ion-card-title>
           </ion-card-header>
         </ion-card>
 
-        <ion-card class="dashboard-card" button routerLink="/planing">
-          <div class="card-gradient schedule-gradient"></div>
-          <ion-icon name="calendar-number-outline" class="card-icon"></ion-icon>
-          <ion-card-header>
+        <!-- Card 3: Scheduling -->
+        <ion-card class="dashboard-card card-secondary" button routerLink="/planing">
+          <ion-icon name="calendar-number-outline" class="card-icon" color="secondary"></ion-icon>
+          <ion-card-header class="card-content">
             <ion-card-title>Scheduling</ion-card-title>
-            <ion-card-subtitle>Workflow Planning</ion-card-subtitle>
           </ion-card-header>
         </ion-card>
 
-        <ion-card class="dashboard-card" button routerLink="/documents">
-          <div class="card-gradient docs-gradient"></div>
-          <ion-icon name="document-outline" class="card-icon"></ion-icon>
-          <ion-card-header>
+        <!-- Card 4: Contract -->
+        <ion-card class="dashboard-card card-tertiary" button routerLink="/documents">
+           <ion-icon name="document-outline" class="card-icon" color="tertiary"></ion-icon>
+           <ion-card-header class="card-content">
             <ion-card-title>Contract</ion-card-title>
-            <ion-card-subtitle>Manage Employee Contracts</ion-card-subtitle>
           </ion-card-header>
         </ion-card>
 
-        <ion-card class="dashboard-card" button routerLink="/manage-positions">
-          <div class="card-gradient position-gradient"></div>
-          <ion-icon name="person-add-outline" class="card-icon"></ion-icon>
-          <ion-card-header>
-            <ion-card-title>Work Positions</ion-card-title>
-            <ion-card-subtitle>Manage Employee Roles</ion-card-subtitle>
+        <!-- Card 5: Work Positions -->
+        <ion-card class="dashboard-card card-success" button routerLink="/manage-positions">
+          <ion-icon name="person-add-outline" class="card-icon" color="success"></ion-icon>
+           <ion-card-header class="card-content">
+            <ion-card-title>Positions</ion-card-title>
           </ion-card-header>
         </ion-card>
 
-        <ion-card class="dashboard-card" button routerLink="/abcance-admin">
-          <div class="card-gradient absence-gradient"></div>
-          <ion-icon name="calendar-clear-outline" class="card-icon"></ion-icon>
-          <ion-card-header>
+        <!-- Card 6: Absence -->
+        <ion-card class="dashboard-card card-warning" button routerLink="/abcance-admin">
+          <ion-icon name="calendar-clear-outline" class="card-icon" color="warning"></ion-icon>
+           <ion-card-header class="card-content">
             <ion-card-title>Absence</ion-card-title>
-            <ion-card-subtitle>Manage Time Off</ion-card-subtitle>
           </ion-card-header>
         </ion-card>
 
-        <ion-card class="dashboard-card" button routerLink="/closing-periods">
-          <div class="card-gradient closing-gradient"></div>
-          <ion-icon name="bed" class="card-icon"></ion-icon>
-          <ion-card-header>
-            <ion-card-title>Closing Periods</ion-card-title>
-            <ion-card-subtitle>Manage Closed Days</ion-card-subtitle>
+        <!-- Card 7: Closing Periods -->
+        <ion-card class="dashboard-card card-medium" button routerLink="/closing-periods">
+           <ion-icon name="bed" class="card-icon" color="medium"></ion-icon>
+           <ion-card-header class="card-content">
+            <ion-card-title>Closing</ion-card-title>
           </ion-card-header>
         </ion-card>
-        <ion-card class="dashboard-card" button routerLink="/chat-rooms">
-      <div class="card-gradient chat-gradient"></div>
-      <ion-icon name="chatbubble-ellipses-outline"  class="card-icon"></ion-icon>
-      <ion-card-header>
-        <ion-card-title>Chat</ion-card-title>
-        <ion-card-subtitle>Exchange with the team</ion-card-subtitle>
-      </ion-card-header>
-    </ion-card>
+
+        <!-- Card 8: Chat -->
+        <ion-card class="dashboard-card card-success" button routerLink="/chat-rooms">
+            <!-- Added a slight variation for chat icon color if desired -->
+          <ion-icon name="chatbubble-ellipses-outline" class="card-icon" style="color: var(--ion-color-success-shade);"></ion-icon>
+           <ion-card-header class="card-content">
+            <ion-card-title>Chat</ion-card-title>
+          </ion-card-header>
+        </ion-card>
+
       </div>
     </ion-content>
   `,
+
   styles: [`
     :host {
-      --ion-background-color: #f7f8fc;
+      --ion-background-color: #f8f9fa; // Lighter, modern background grey
+      --card-hover-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+      --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      --card-border-radius: 16px; // Slightly larger radius
+    }
+
+    .modern-header ion-toolbar {
+      --background: var(--ion-background-color); // Match page background
+      --border-width: 0; // Remove default border
+       padding-top: 8px; // Add some top padding to header content
+       padding-bottom: 8px;
+    }
+
+    .modern-header ion-title {
+      font-weight: 600;
+      font-size: 22px;
+      color: #1d2129; // Darker, more readable title color
+      padding-inline: 16px; // Ensure padding matches grid
+    }
+
+    .logout-button {
+      --color: var(--ion-color-medium-shade); // More subtle logout color
+      --ripple-color: var(--ion-color-medium-tint);
+      font-weight: 500;
+      font-size: 14px;
+       margin-inline-end: 10px; // Ensure some space from edge
+    }
+     .logout-button ion-icon {
+        margin-inline-end: 5px;
+        font-size: 18px; // Slightly smaller icon
     }
 
     .dashboard-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px;
-      padding: 24px;
-      margin-top: 10px;
+      grid-template-columns: repeat(3, 1fr); // Keep 3 columns for mobile focus
+      gap: 16px; // Slightly increased gap for breathing room
+      padding: 30px 26px; // More vertical padding, standard horizontal
     }
 
     .dashboard-card {
-      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--card-border-radius);
+      box-shadow: var(--card-shadow);
+      background: #ffffff; // Clean white cards
+      padding: 18px 10px; // Adjust padding for content balance
+      margin: 10px 0; // Vertical margin for spacing
       overflow: hidden;
-      border-radius: 16px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      height: 180px;
-      --background: white;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1); // Smoother transition
+       position: relative; // Needed for potential future pseudo-elements
     }
 
-    .dashboard-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+    /* Subtle hover effect */
+     .dashboard-card:hover {
+        transform: translateY(-4px); // Slightly more lift
+        box-shadow: var(--card-hover-shadow);
     }
 
-    .card-gradient {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      opacity: 0.9;
+    /* Active state feedback */
+     .dashboard-card:active {
+        transform: scale(0.96); // Keep the nice scale effect
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); // Slightly reduced shadow when pressed
     }
 
-    .qr-gradient {
-      background: linear-gradient(135deg, #4361eb 0%, #764ba2 100%);
-    }
-
-    .team-gradient {
-      background: linear-gradient(135deg, #e94560 0%, #c53678 100%);
-    }
-
-    .schedule-gradient {
-      background: linear-gradient(135deg, #00b4d8 0%, #0077b6 100%);
-    }
-
-    .docs-gradient {
-      background: linear-gradient(135deg, #7b2cbf 0%, #5a189a 100%);
-    }
-
-    .position-gradient {
-      background: linear-gradient(135deg, #4caf50 0%, #087f23 100%);
-    }
-
-    .absence-gradient {
-      background: linear-gradient(135deg, #ff7eb3 0%, #ff758c 100%);
-    }
-
-    .closing-gradient {
-      background: linear-gradient(135deg, #f1c01c 0%, #da7356 100%);
-    }
-   .chat-gradient{background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
-  }
     .card-icon {
-      font-size: 42px;
-      color: rgba(255, 255, 255, 0.9);
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+      font-size: 34px; // Slightly adjusted size
+      margin-bottom: 12px; // Increased space below icon
+      // Color is set via 'color' attribute or inline style in template
+       // Consider adding a subtle background shape if desired later
     }
 
-    ion-card-header {
-      padding-top: 80px;
-      position: relative;
-      z-index: 2;
+    .card-content {
+      padding: 0;
+      text-align: center;
+      width: 100%;
     }
 
     ion-card-title {
-      color: white;
-      font-weight: 600;
-      font-size: 20px;
-      margin-bottom: 4px;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      color: #333d4f; // Dark grey for better readability
+      font-weight: 500; // Medium weight is often cleaner than bold
+      font-size: 13px; // Keep font size appropriate for small cards
+      line-height: 1.4;
+      margin: 0;
+       letter-spacing: 0.2px; // Subtle letter spacing can look modern
     }
 
-    ion-card-subtitle {
-      color: rgba(255, 255, 255, 0.85);
-      font-size: 14px;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    }
+    /* --- Optional: Add subtle background tints based on theme --- */
+    /* Uncomment and adjust colors as needed */
+    /*
+    .dashboard-card.card-primary { background: linear-gradient(to bottom right, white, var(--ion-color-primary-tint)); }
+    .dashboard-card.card-danger { background: linear-gradient(to bottom right, white, var(--ion-color-danger-tint)); }
+    .dashboard-card.card-secondary { background: linear-gradient(to bottom right, white, var(--ion-color-secondary-tint)); }
+    .dashboard-card.card-tertiary { background: linear-gradient(to bottom right, white, var(--ion-color-tertiary-tint)); }
+    .dashboard-card.card-success { background: linear-gradient(to bottom right, white, var(--ion-color-success-tint)); }
+    .dashboard-card.card-warning { background: linear-gradient(to bottom right, white, var(--ion-color-warning-tint)); }
+    .dashboard-card.card-medium { background: linear-gradient(to bottom right, white, var(--ion-color-medium-tint)); }
+    */
 
-    ion-header ion-toolbar {
-      --background: transparent;
-      padding: 10px 16px;
-    }
 
-    ion-title {
-      font-weight: 700;
-      font-size: 24px;
-    }
-
-    .logout-button {
-      --background: #f4f5f8;
-      --color: #545ca7;
-      --border-radius: 8px;
-      --padding-start: 12px;
-      --padding-end: 12px;
-      font-weight: 500;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-      height: 40px;
-      margin-right: 8px;
-      transition: background-color 0.2s;
-    }
-
-    .logout-button:hover {
-      --background: #e8eaef;
-    }
-
-    @media (max-width: 576px) {
+    /* --- Responsive Adjustments --- */
+    @media (min-width: 600px) { // Tablet
       .dashboard-grid {
-        grid-template-columns: 1fr;
-        padding: 16px;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        padding: 24px;
       }
-
       .dashboard-card {
-        height: 150px;
+          padding: 24px 12px;
       }
-
-      ion-card-header {
-        padding-top: 60px;
+      .card-icon {
+          font-size: 38px;
+          margin-bottom: 14px;
+      }
+      ion-card-title {
+          font-size: 14px;
       }
     }
+
+    @media (min-width: 992px) { // Desktop
+         .dashboard-grid {
+             // Use auto-fit for flexibility on large screens
+             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+             gap: 24px;
+             padding: 32px;
+              max-width: 1200px; // Optional: Max width for very large screens
+              margin-left: auto;
+              margin-right: auto;
+         }
+         .dashboard-card {
+             padding: 28px 15px;
+         }
+         .card-icon {
+             font-size: 42px;
+            margin-bottom: 16px;
+         }
+         ion-card-title {
+             font-size: 15px;
+         }
+     }
   `],
 })
 export class AdminDashboardPage {

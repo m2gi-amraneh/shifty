@@ -12,10 +12,8 @@ const config: CapacitorConfig = {
       forceCodeForRefreshToken: true,
     },
     FacebookLogin: {
-      appId: '14125',
-      autoLogAppEvents: true,
-      xfbml: true,
-      version: 'v12.0'
+      appId: '1907280960089941',
+
     },
     Firebase: {
       android: {
