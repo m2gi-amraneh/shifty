@@ -156,4 +156,8 @@ export const routes: Routes = [
       import('./shared/group-chat/group-chat.component').then((m) => m.GroupChatComponent),
     canActivate: [AuthGuard],
   },
+  {
+    path: 'geo-badge',
+    loadComponent: () => import('./employee/geo-badge/geo-badge.page').then(m => m.GeoBadgePage)
+  },
 ];

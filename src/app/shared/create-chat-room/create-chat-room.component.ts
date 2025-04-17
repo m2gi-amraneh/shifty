@@ -99,7 +99,7 @@ addIcons({ addCircle }); // Register icons
               </ion-avatar>
               <ion-label>
                 <!-- Use displayName or fall back -->
-                <h3>{{ user.displayName || user.email || 'Unknown User' }}</h3>
+                <h3>{{ user.name || user.email || 'Unknown User' }}</h3>
               </ion-label>
               <ion-checkbox
                 [(ngModel)]="user.selected"

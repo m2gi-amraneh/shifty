@@ -46,7 +46,9 @@ addIcons({
     IonCard,],
 })
 export class EmployeDashboardPage {
-  constructor(private authService: AuthService, private router: Router) { }
+  constructor(private authService: AuthService, private router: Router) {
+    addIcons({ logOutOutline, fingerPrintOutline, calendarNumberOutline, calendarOutline, timeOutline, calendarClearOutline, chatbubbleEllipsesOutline });
+  }
 
 
   async logout() {

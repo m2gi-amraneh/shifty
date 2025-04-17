@@ -142,9 +142,9 @@ export class ChatService {
     batch.delete(chatRoomRef); // Delete the room itself
 
     // Consider deleting messages (can be slow/costly for many messages)
-    // const messagesQuery = query(collection(this.firestore, 'messages'), where('chatRoomId', '==', chatRoomId));
-    // const messagesSnapshot = await getDocs(messagesQuery);
-    // messagesSnapshot.forEach(msgDoc => batch.delete(msgDoc.ref));
+    const messagesQuery = query(collection(this.firestore, 'messages'), where('chatRoomId', '==', chatRoomId));
+    const messagesSnapshot = await getDocs(messagesQuery);
+    messagesSnapshot.forEach(msgDoc => batch.delete(msgDoc.ref));
 
     // Delete pending access requests for this room
     const requestsQuery = query(collection(this.firestore, 'accessRequests'), where('roomId', '==', chatRoomId));
@@ -287,7 +287,7 @@ export class ChatService {
     });
 
     // Consider deleting accepted requests after some time?
-    // batch.delete(requestRef); // Or just delete immediately
+    batch.delete(requestRef); // Or just delete immediately
 
     return batch.commit();
   }

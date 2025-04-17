@@ -220,6 +220,7 @@ export class BadgeService {
     const badgeDoc = doc(this.firestore, 'badgedShifts', badgeId);
     await updateDoc(badgeDoc, updates);
   }
+  //check if the shift is already badged today
   async checkExistingBadgedShift(employeeId: string, shiftId: string): Promise<boolean> {
     const badgeCollection = collection(this.firestore, 'badgedShifts');
     const today = new Date();

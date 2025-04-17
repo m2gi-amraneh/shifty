@@ -1,13 +1,19 @@
-import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { Component, OnInit, OnDestroy, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef } from '@angular/core';
+// ... other imports
+import { firstValueFrom } from 'rxjs'; // For cleaner async/await with Observables
+import jsPDF from 'jspdf';
 import { CommonModule } from '@angular/common';
+
 // No need for IonicModule if using standalone components everywhere
 import { FormsModule } from '@angular/forms';
 import { ShiftReportService, ShiftReport } from '../../services/shift-report.service';
 import { Observable, Subscription, BehaviorSubject, of } from 'rxjs'; // Added 'of'
-import { switchMap } from 'rxjs/operators'; // Added switchMap operator
+import { filter, switchMap } from 'rxjs/operators'; // Added switchMap operator
 import { AuthService } from '../../services/auth.service';
 import { ActivatedRoute } from '@angular/router'; // <-- Import ActivatedRoute
 import { addIcons } from 'ionicons';
+
+import html2canvas from 'html2canvas';
 import {
   calendarOutline,
   documentTextOutline,
@@ -27,9 +33,10 @@ import {
   IonCardContent,
   IonSegment,
   IonSegmentButton,
-  IonLabel,
+  IonLabel, ToastController,
   // Standalone components don't need IonicModule import here
 } from '@ionic/angular/standalone';
+import { ShiftReportTemplateComponent } from 'src/app/pdf-templates/shift-report-template/shift-report-template.component';
 
 // addIcons call remains the same
 addIcons({
@@ -46,7 +53,7 @@ addIcons({
   imports: [
     CommonModule,
     FormsModule,
-    IonHeader,
+    IonHeader, ShiftReportTemplateComponent,
     IonToolbar,
     IonButtons,
     IonBackButton,
@@ -62,93 +69,105 @@ addIcons({
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
-    <ion-header>
-      <ion-toolbar class="header-toolbar">
-        <ion-buttons slot="start">
-          <!-- Conditionally change back button destination -->
-          <ion-back-button
-             [defaultHref]="isAdminView ? '/manage-employees' : '/employee-dashboard'"
-          ></ion-back-button>
-        </ion-buttons>
-        <ion-title>
-            {{ isAdminView ? 'Employee Shift Report' : 'My Shift Hours Report' }}
-        </ion-title>
-      </ion-toolbar>
-    </ion-header>
+  <ion-header>
+  <ion-toolbar class="header-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button
+         [defaultHref]="isAdminView ? '/manage-employees' : '/employee-dashboard'"
+      ></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+        {{ isAdminView ? 'Employee Shift Report' : 'My Shift Hours Report' }}
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
 
-    <ion-content class="custom-content"> <!-- Added custom-content class if needed by styles -->
-      <div class="ion-padding">
-        <!-- Report Type Selection -->
-        <ion-segment [(ngModel)]="reportType" (ionChange)="onReportTypeChange()" class="custom-segment">
-          <ion-segment-button value="weekly">
-            <ion-icon name="calendar-outline"></ion-icon> <!-- Corrected icon name case -->
-            <ion-label>Weekly</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="monthly">
-            <ion-icon name="calendar-outline"></ion-icon> <!-- Corrected icon name case -->
-            <ion-label>Monthly</ion-label>
-          </ion-segment-button>
-        </ion-segment>
-
-        <!-- Date Navigation -->
-        <div class="date-navigation">
-          <ion-button fill="clear" (click)="navigateDate('back')" class="nav-button"> <!-- Added class -->
-            <ion-icon name="chevron-back-outline"></ion-icon> <!-- Corrected icon name case -->
-          </ion-button>
-          <div class="date-display">
-            <span class="date-range">{{ getDisplayDateRange() }}</span>
-          </div>
-          <ion-button fill="clear" (click)="navigateDate('forward')" class="nav-button"> <!-- Added class -->
-            <ion-icon name="chevron-forward-outline"></ion-icon> <!-- Corrected icon name case -->
-          </ion-button>
-        </div>
-
-        <!-- Summary Card -->
-         <!-- Check if shifts$ exists and has emitted before showing summary -->
-         <ng-container *ngIf="shifts$ | async as shifts; else loadingOrError">
-             <ion-card *ngIf="shifts !== null" class="summary-card fade-in"> <!-- Ensure shifts is not null -->
-                 <ion-card-content>
-                     <div class="summary-grid">
-                         <div class="summary-item">
-                           <span class="label">Total Shifts</span>
-                           <span class="value">{{ shifts.length }}</span>
-                         </div>
-                         <div class="summary-item">
-                           <span class="label">Total Hours</span>
-                           <span class="value">{{ calculateTotalHours(shifts) | number:'1.1-1' }}</span>
-                         </div>
-                     </div>
-                 </ion-card-content>
-             </ion-card>
-
-             <!-- Optional: Display empty state within the async pipe if shifts array is empty -->
-              <div *ngIf="shifts?.length === 0" class="empty-state fade-in">
-                  <ion-icon name="document-text-outline"></ion-icon>
-                  <h3>No Shifts Found</h3>
-                  <p>There are no recorded shifts for this period.</p>
-              </div>
-         </ng-container>
-
-        <!-- Loading/Error Template -->
-        <ng-template #loadingOrError>
-             <!-- You can add a loading spinner here if needed -->
-             <!-- <ion-spinner name="crescent"></ion-spinner> -->
-             <!-- Or just leave it blank until shifts$ emits -->
-        </ng-template>
+<!-- Hidden container for the PDF template.
+     It needs to be in the DOM for jsPDF to access it,
+     but positioned off-screen. -->
+<div style="position: absolute; left: -9999px; top: 0px; z-index: -100;" #pdfTemplateContainer>
+   <app-shift-report-template
+     [shifts]="(shifts$ | async) || []"
+     [employeeId]="employeeId"
+     [startDate]="currentStartDate"
+     [endDate]="currentEndDate">
+   </app-shift-report-template>
+</div>
 
 
-        <!-- Generate Report Button -->
-        <ion-button
-          expand="block"
-          class="generate-button"
-          (click)="generateReport()"
-           [disabled]="!(shifts$ | async)?.length"
-        >
-          <ion-icon name="document-text-outline" slot="start"></ion-icon>
-          Generate PDF Report
-        </ion-button>
+<ion-content class="custom-content">
+  <div class="ion-padding">
+    <!-- Report Type Selection -->
+    <ion-segment [(ngModel)]="reportType" (ionChange)="onReportTypeChange()" class="custom-segment" mode="md">
+      <ion-segment-button value="weekly">
+        <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
+        <ion-label>Weekly</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="monthly">
+        <ion-icon name="calendar-outline" aria-hidden="true"></ion-icon>
+        <ion-label>Monthly</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <!-- Date Navigation -->
+    <div class="date-navigation">
+      <ion-button fill="clear" (click)="navigateDate('back')" class="nav-button" aria-label="Previous Period">
+        <ion-icon name="chevron-back-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+      <div class="date-display">
+        <span class="date-range">{{ getDisplayDateRange() }}</span>
       </div>
-    </ion-content>
+      <ion-button fill="clear" (click)="navigateDate('forward')" class="nav-button" aria-label="Next Period">
+        <ion-icon name="chevron-forward-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </div>
+
+    <!-- Summary Card -->
+     <ng-container *ngIf="shifts$ | async as shifts; else loadingOrError">
+         <ion-card *ngIf="shifts !== null" class="summary-card fade-in">
+             <ion-card-content>
+                 <div class="summary-grid">
+                     <div class="summary-item">
+                       <span class="label">Total Shifts</span>
+                       <span class="value">{{ shifts.length }}</span>
+                     </div>
+                     <div class="summary-item">
+                       <span class="label">Total Hours</span>
+                       <span class="value">{{ calculateTotalHours(shifts) | number:'1.1-1' }}</span>
+                     </div>
+                 </div>
+             </ion-card-content>
+         </ion-card>
+
+          <div *ngIf="shifts?.length === 0" class="empty-state fade-in">
+              <ion-icon name="document-text-outline" aria-hidden="true"></ion-icon>
+              <h3>No Shifts Found</h3>
+              <p>There are no recorded shifts for this period.</p>
+          </div>
+     </ng-container>
+
+    <!-- Loading/Error Template -->
+    <ng-template #loadingOrError>
+         <!-- Can add a loading spinner or skeleton text -->
+         <div class="ion-text-center ion-padding-top">
+            <!-- <ion-spinner name="crescent"></ion-spinner> <p>Loading shifts...</p> -->
+            <!-- Or keep it blank until data loads -->
+         </div>
+    </ng-template>
+
+
+    <!-- Generate Report Button -->
+    <ion-button
+      expand="block"
+      class="generate-button"
+      (click)="generatePdfFromTemplate()"
+      [disabled]="!(shifts$ | async)?.length"
+    >
+      <ion-icon name="document-text-outline" slot="start" aria-hidden="true"></ion-icon>
+      Generate PDF Report
+    </ion-button>
+  </div>
+</ion-content>
   `, // Pass the template string here
   styles: [`
     /* Base styles */
@@ -344,41 +363,46 @@ addIcons({
 export class ShiftReportPage implements OnInit, OnDestroy {
   reportType: 'weekly' | 'monthly' = 'weekly';
   selectedDate = new Date();
-  shifts$: Observable<ShiftReport[] | null> = of(null); // Initialize with null
+  shifts$: Observable<ShiftReport[]> = of([]);
   employeeId: string | null = null;
-  isAdminView: boolean = false; // Flag for UI changes
-  private dataSub: Subscription | null = null; // Renamed subscription
+  isAdminView: boolean = false;
+  private dataSub: Subscription | null = null;
+
+  // Properties to store the calculated date range for the template/PDF
+  currentStartDate: Date | null = null;
+  currentEndDate: Date | null = null;
+
+  // Reference to the hidden template component's container element
+  @ViewChild('pdfTemplateContainer') pdfTemplateRef!: ElementRef<HTMLDivElement>;
 
   constructor(
     private shiftReportService: ShiftReportService,
     private authService: AuthService,
-    private route: ActivatedRoute // Inject ActivatedRoute
+    private route: ActivatedRoute,
+    private toastController: ToastController // <-- Inject ToastController
   ) { }
 
   ngOnInit() {
-    // Chain route param check and auth check
     this.dataSub = this.route.paramMap.pipe(
       switchMap(params => {
         const routeEmployeeId = params.get('employeeId');
         if (routeEmployeeId) {
-          // Admin view: Use employeeId from route
           this.isAdminView = true;
           this.employeeId = routeEmployeeId;
           console.log(`Admin view: Reporting for employee ${this.employeeId}`);
-          return of(this.employeeId); // Pass the ID down the chain
+          return of(this.employeeId);
         } else {
-          // Personal view: Get logged-in user's ID
           this.isAdminView = false;
           return this.authService.getCurrentUser().pipe(
             switchMap(user => {
               if (user) {
                 this.employeeId = user.uid;
                 console.log(`Personal view: Reporting for employee ${this.employeeId}`);
-                return of(this.employeeId); // Pass the ID down
+                return of(this.employeeId);
               } else {
                 console.error('No user logged in and no employeeId in route.');
                 this.employeeId = null;
-                return of(null); // Indicate no valid ID found
+                return of(null);
               }
             })
           );
@@ -386,211 +410,257 @@ export class ShiftReportPage implements OnInit, OnDestroy {
       })
     ).subscribe(id => {
       if (id) {
-        // An employee ID was determined (either from route or auth)
-        this.fetchShifts(); // Fetch shifts now that we have the ID
+        this.fetchShifts(); // Initial fetch
       } else {
-        // Handle the case where no ID could be determined
-        this.shifts$ = of([]); // Show empty state or handle error
+        this.shifts$ = of([]);
+        this.showToast('Could not determine user for report.', 'warning');
         console.warn('Could not determine employee ID for report.');
-        // Potentially show an error message to the user
       }
     });
   }
 
   ngOnDestroy() {
-    this.dataSub?.unsubscribe(); // Unsubscribe
+    this.dataSub?.unsubscribe();
   }
 
   onReportTypeChange() {
-    // Reset date to current month/week when type changes for simplicity
-    this.selectedDate = new Date();
-    // Re-fetch shifts only if we have a valid employeeId
+    this.selectedDate = new Date(); // Reset date
     if (this.employeeId) {
       this.fetchShifts();
     }
   }
 
   navigateDate(direction: 'back' | 'forward') {
-    const currentDate = new Date(this.selectedDate); // Clone to avoid direct mutation issues if needed elsewhere
-
+    const currentDate = new Date(this.selectedDate);
     if (this.reportType === 'weekly') {
       currentDate.setDate(currentDate.getDate() + (direction === 'back' ? -7 : 7));
-    } else { // monthly
+    } else {
       currentDate.setMonth(currentDate.getMonth() + (direction === 'back' ? -1 : 1));
     }
-
-    this.selectedDate = currentDate; // Update the component's selectedDate
-
-    // Re-fetch shifts only if we have a valid employeeId
+    this.selectedDate = currentDate;
     if (this.employeeId) {
       this.fetchShifts();
     }
   }
 
-
   fetchShifts() {
     if (!this.employeeId) {
       console.warn("Attempted to fetch shifts without an employeeId.");
-      this.shifts$ = of([]); // Set to empty array observable
-      return; // Guard clause
+      this.shifts$ = of([]);
+      this.currentStartDate = null; // Clear dates
+      this.currentEndDate = null;
+      return;
     }
 
-    let startDate: Date;
-    let endDate: Date;
-
-    // Ensure selectedDate is a valid Date object before calculations
+    // Ensure selectedDate is valid
     if (!(this.selectedDate instanceof Date) || isNaN(this.selectedDate.getTime())) {
       console.error("Invalid selectedDate:", this.selectedDate);
-      this.selectedDate = new Date(); // Reset to current date as a fallback
+      this.selectedDate = new Date();
+      this.showToast('Invalid date selected, reset to current.', 'warning');
     }
 
-
+    // Calculate and STORE the current date range
     if (this.reportType === 'weekly') {
-      startDate = this.getStartOfWeek(this.selectedDate);
-      endDate = this.getEndOfWeek(this.selectedDate);
+      this.currentStartDate = this.getStartOfWeek(this.selectedDate);
+      this.currentEndDate = this.getEndOfWeek(this.selectedDate);
     } else { // monthly
-      startDate = this.getStartOfMonth(this.selectedDate);
-      endDate = this.getEndOfMonth(this.selectedDate);
+      this.currentStartDate = this.getStartOfMonth(this.selectedDate);
+      this.currentEndDate = this.getEndOfMonth(this.selectedDate);
     }
 
-    console.log(`Fetching shifts for ${this.employeeId} from ${startDate.toISOString()} to ${endDate.toISOString()}`);
-    // Assign the observable directly
+    // Double check calculated dates are valid
+    if (!this.currentStartDate || !this.currentEndDate || isNaN(this.currentStartDate.getTime()) || isNaN(this.currentEndDate.getTime())) {
+      console.error("Failed to calculate a valid date range.");
+      this.shifts$ = of([]);
+      this.showToast('Error calculating report dates.', 'danger');
+      return;
+    }
+
+    console.log(`Fetching shifts for ${this.employeeId} from ${this.currentStartDate.toISOString()} to ${this.currentEndDate.toISOString()}`);
     this.shifts$ = this.shiftReportService.getShiftsByDateRange(
       this.employeeId!,
-      startDate,
-      endDate
+      this.currentStartDate, // Use stored dates
+      this.currentEndDate   // Use stored dates
     );
 
-    // Optional: Handle potential errors from the service call
+    // Handle potential errors from the service call
     this.shifts$.subscribe({
       error: (err) => {
         console.error("Error fetching shifts:", err);
         this.shifts$ = of([]); // Show empty on error
+        this.showToast('Error fetching shift data.', 'danger');
       }
+      // No need for next handler here as we use async pipe in template
     });
   }
 
-  async generateReport() {
-    if (!this.employeeId) {
-      console.error("Cannot generate report without employeeId.");
+  // --- NEW PDF Generation Method using HTML Template ---
+  async generatePdfFromTemplate() {
+    console.log('Attempting PDF generation from template...');
+
+    // 1. Guard Clauses for necessary data and elements
+    if (!this.pdfTemplateRef?.nativeElement) {
+      console.error('PDF template container reference is not available.');
+      this.showToast('Error preparing report template.', 'danger');
+      return;
+    }
+    if (!this.employeeId || !this.currentStartDate || !this.currentEndDate) {
+      console.error('Missing necessary data for PDF generation (employeeId or dates).');
+      this.showToast('Report data is incomplete.', 'warning');
       return;
     }
 
-    // We need the current shifts data, not just the observable
-    // Use a temporary subscription or take(1) if you prefer
-    const shiftsSub = this.shifts$.subscribe(async shifts => {
-      if (!shifts || shifts.length === 0) {
+    let shifts: ShiftReport[];
+    try {
+      // 2. Get the current shifts data (wait for observable to emit)
+      // Use filter(s => s !== null) to ensure we don't proceed if observable hasn't emitted yet or emitted null
+      const shiftsResult = await firstValueFrom(this.shifts$.pipe(filter(s => s !== null)));
+      if (!shiftsResult) { // Should be caught by filter, but extra safety
+        console.log("Shifts data is null.");
+        this.showToast('Shift data not loaded yet.', 'warning');
+        return;
+      }
+      shifts = shiftsResult as ShiftReport[];
+
+      // 3. Check if there are any shifts to report
+      if (shifts.length === 0) {
         console.log("No shifts data available to generate report.");
-        // Optionally show a toast message to the user
+        this.showToast('No shifts found for this period to generate report.', 'medium');
         return;
       }
 
-      let startDate: Date;
-      let endDate: Date;
-
-      if (this.reportType === 'weekly') {
-        startDate = this.getStartOfWeek(this.selectedDate);
-        endDate = this.getEndOfWeek(this.selectedDate);
-      } else { // monthly
-        startDate = this.getStartOfMonth(this.selectedDate);
-        endDate = this.getEndOfMonth(this.selectedDate);
-      }
-
-      try {
-        console.log(`Generating PDF report for ${this.employeeId}...`);
-        await this.shiftReportService.generatePdfReport(
-          this.employeeId!,
-          startDate,
-          endDate,
-          shifts // Pass the actual shifts array
-        );
-        console.log("PDF report generation initiated.");
-      } catch (error) {
-        console.error("Error generating PDF report:", error);
-        // Optionally show an error message to the user
-      }
-    });
-
-    // Clean up the temporary subscription after it runs once
-    // Note: This might run before the async operation inside completes,
-    // but it prevents memory leaks if the component is destroyed quickly.
-    // Consider using `firstValueFrom` or `take(1)` for cleaner handling.
-    setTimeout(() => shiftsSub.unsubscribe(), 0);
-
-    /* Alternative using firstValueFrom (more modern RxJS):
-    try {
-        const shifts = await firstValueFrom(this.shifts$.pipe(filter(s => s !== null))); // Wait for non-null shifts
-        if (!shifts || shifts.length === 0) {
-           console.log("No shifts data available to generate report.");
-           return;
-        }
-        // ... (calculate startDate, endDate)
-        await this.shiftReportService.generatePdfReport(...);
     } catch (error) {
-        console.error("Error generating PDF report:", error);
+      console.error("Error retrieving shifts data for PDF:", error);
+      this.showToast('Failed to get shift data for report.', 'danger');
+      return;
     }
-    */
+
+    // 4. Initialize jsPDF
+    const pdf = new jsPDF({
+      orientation: 'p',
+      unit: 'pt',
+      format: 'a4',
+      putOnlyUsedFonts: true,
+    }) as jsPDF & { html: (element: HTMLElement, options?: any) => Promise<any> };
+    // 5. Get the HTML element to convert
+    // We target the specific wrapper inside the template component for cleaner conversion
+    const sourceElement = this.pdfTemplateRef.nativeElement.querySelector('#pdf-content-wrapper');
+    if (!sourceElement) {
+      console.error("Could not find #pdf-content-wrapper element within the template.");
+      this.showToast('Report template structure error.', 'danger');
+      return;
+    }
+
+    // 6. Use pdf.html() to convert the element
+    try {
+      console.log('Calling pdf.html()...');
+      await pdf.html(sourceElement as HTMLElement, {
+        callback: (doc: { save: (arg0: string) => void; }) => {
+          // 7. Save the PDF inside the callback
+          const startDateStr = this.currentStartDate!.toISOString().split('T')[0];
+          const endDateStr = this.currentEndDate!.toISOString().split('T')[0];
+          const fileName = `shift_report_${this.employeeId}_${startDateStr}_to_${endDateStr}.pdf`;
+
+          console.log(`Saving PDF as: ${fileName}`);
+          doc.save(fileName);
+          this.showToast('PDF Report Generated Successfully!', 'success');
+        },
+        // Adjust margins and width as needed. These are in the unit defined above ('pt')
+        margin: [40, 30, 40, 30], // top, left, bottom, left margins in points
+        // width: 595 - 30 - 30, // A4 width (595pt) minus left/right margins (optional, jsPDF tries to figure it out)
+        windowWidth: sourceElement.clientWidth || 700, // Help jsPDF with element width calculation (use actual width if possible)
+        html2canvas: {
+          scale: 0.7, // Adjust scale down if content overflows width (lower = smaller content)
+          useCORS: true, // Important if you have external images/styles (usually not needed here)
+          logging: false, // Reduce console noise
+        },
+        // autoPaging: 'text' // Experiment with autoPaging if needed, can be tricky
+      });
+      console.log('pdf.html() process completed.');
+    } catch (error) {
+      console.error("Error occurred during pdf.html() conversion:", error);
+      this.showToast('Failed to convert report to PDF.', 'danger');
+    }
   }
 
-  // --- Helper functions remain the same ---
+  // --- Helper functions ---
   getDisplayDateRange(): string {
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      year: 'numeric',
-      day: 'numeric'
-    });
-
-    // Ensure selectedDate is valid before formatting
-    if (!(this.selectedDate instanceof Date) || isNaN(this.selectedDate.getTime())) {
-      return "Invalid Date";
+    // Ensure dates are valid before formatting
+    if (!this.currentStartDate || !this.currentEndDate || isNaN(this.currentStartDate.getTime()) || isNaN(this.currentEndDate.getTime())) {
+      // Try to calculate them if not available yet (e.g., initial load before fetch completes)
+      if (this.reportType === 'weekly') {
+        const start = this.getStartOfWeek(this.selectedDate);
+        const end = this.getEndOfWeek(this.selectedDate);
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) return "Calculating...";
+        return `${this.formatSimpleDate(start)} - ${this.formatSimpleDate(end)}`;
+      } else {
+        if (isNaN(this.selectedDate.getTime())) return "Calculating...";
+        return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(this.selectedDate);
+      }
     }
-
 
     if (this.reportType === 'weekly') {
-      const startDate = this.getStartOfWeek(this.selectedDate);
-      const endDate = this.getEndOfWeek(this.selectedDate);
-      // Additional check for valid start/end dates
-      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return "Invalid Week";
-      return `${formatter.format(startDate)} - ${formatter.format(endDate)}`;
+      return `${this.formatSimpleDate(this.currentStartDate)} - ${this.formatSimpleDate(this.currentEndDate)}`;
     } else { // monthly
-      return new Intl.DateTimeFormat('en-US', {
-        month: 'long',
-        year: 'numeric'
-      }).format(this.selectedDate);
+      return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(this.currentStartDate); // Use start date for month name
     }
   }
 
+  // Helper for consistent date formatting
+  private formatSimpleDate(date: Date): string {
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+  }
+
+
   calculateTotalHours(shifts: ShiftReport[] | null): number {
-    if (!shifts) return 0; // Handle null case
-    return shifts.reduce((total, shift) => total + (shift.totalHours || 0), 0); // Add null check for totalHours
+    if (!shifts) return 0;
+    return shifts.reduce((total, shift) => total + (shift.totalHours || 0), 0);
   }
 
-  // Add null/undefined check for the input date parameter in helper functions
-  private getStartOfWeek(date: Date | null | undefined): Date {
+  // --- Date calculation helpers (ensure they handle potential invalid input) ---
+  private getStartOfWeek(date: Date): Date {
+    const d = date instanceof Date && !isNaN(date.getTime()) ? new Date(date) : new Date(); // Use valid date or fallback
+    const day = d.getDay(); // 0 = Sunday, 1 = Monday, ...
+    // Adjust to get Monday (if Sunday (0), go back 6 days, else go back day-1 days)
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  }
+
+  private getEndOfWeek(date: Date): Date {
     const d = date instanceof Date && !isNaN(date.getTime()) ? new Date(date) : new Date();
-    d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1)); // Assuming Monday is start of week
-    d.setHours(0, 0, 0, 0);
-    return d;
+    const startOfWeek = this.getStartOfWeek(d); // Use the reliable start date
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // Add 6 days to get Sunday
+    endOfWeek.setHours(23, 59, 59, 999);
+    return endOfWeek;
   }
 
-  private getEndOfWeek(date: Date | null | undefined): Date {
+  private getStartOfMonth(date: Date): Date {
     const d = date instanceof Date && !isNaN(date.getTime()) ? new Date(date) : new Date();
-    const startOfWeek = this.getStartOfWeek(d);
-    startOfWeek.setDate(startOfWeek.getDate() + 6);
-    startOfWeek.setHours(23, 59, 59, 999);
-    return startOfWeek;
+    const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    return startOfMonth;
   }
 
-  private getStartOfMonth(date: Date | null | undefined): Date {
+  private getEndOfMonth(date: Date): Date {
     const d = date instanceof Date && !isNaN(date.getTime()) ? new Date(date) : new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1, 0, 0, 0, 0);
+    const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0); // Day 0 of next month is last day of current
+    endOfMonth.setHours(23, 59, 59, 999);
+    return endOfMonth;
   }
 
-  private getEndOfMonth(date: Date | null | undefined): Date {
-    const d = date instanceof Date && !isNaN(date.getTime()) ? new Date(date) : new Date();
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+  // --- Helper to show toast messages ---
+  async showToast(message: string, color: 'success' | 'warning' | 'danger' | 'medium' = 'medium', duration: number = 3000) {
+    const toast = await this.toastController.create({
+      message: message,
+      duration: duration,
+      color: color,
+      position: 'bottom' // Or 'top', 'middle'
+    });
+    await toast.present();
   }
 
-  // Removed groupShiftsByDate and formatTimestamp as they weren't used in the provided template
-  // Removed formatDate and formatTime as they weren't used either
+  // Removed the old generateReport method as it's replaced by generatePdfFromTemplate
 }
