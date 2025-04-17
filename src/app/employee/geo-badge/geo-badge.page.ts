@@ -1,12 +1,11 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
-import { CommonModule, DatePipe, TitleCasePipe } from '@angular/common'; // Added TitleCasePipe
+import { CommonModule, DatePipe, TitleCasePipe } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { BadgeService, BadgedShift } from '../../services/badge.service';
 import { PlanningService, Shift } from '../../services/planning.service';
 import { ScheduleService } from '../../services/schedule.service';
-
 import { AuthService } from '../../services/auth.service';
-import { ToastController, LoadingController } from '@ionic/angular';
+import { ToastController, LoadingController, AnimationController } from '@ionic/angular';
 import { firstValueFrom, Subscription, combineLatest } from 'rxjs';
 import { map, switchMap, filter, take } from 'rxjs/operators';
 import { Timestamp } from '@angular/fire/firestore';
@@ -15,7 +14,8 @@ import {
   addCircleOutline, hourglassOutline, logInOutline, pauseOutline, playOutline,
   logOutOutline, locationOutline, checkmarkCircleOutline, closeCircleOutline, refreshOutline,
   timeOutline, informationCircleOutline, calendarOutline, airplaneOutline, warningOutline,
-  settingsOutline, briefcaseOutline // Added missing icons
+  settingsOutline, briefcaseOutline, fingerPrintOutline, timerOutline, peopleOutline,
+  navigateOutline, alertCircleOutline, buildOutline, flashOutline, heartOutline
 } from 'ionicons/icons';
 
 // Add necessary icons
@@ -23,13 +23,16 @@ addIcons({
   logInOutline, addCircleOutline, hourglassOutline, pauseOutline, playOutline,
   logOutOutline, locationOutline, checkmarkCircleOutline, closeCircleOutline,
   refreshOutline, timeOutline, informationCircleOutline, calendarOutline,
-  airplaneOutline, warningOutline, settingsOutline, briefcaseOutline // Added missing icons
+  airplaneOutline, warningOutline, settingsOutline, briefcaseOutline,
+  fingerPrintOutline, timerOutline, peopleOutline, navigateOutline,
+  alertCircleOutline, buildOutline, flashOutline, heartOutline
 });
 
 import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent,
   IonBackButton, IonButtons, IonItem, IonButton, IonRadioGroup, IonRadio, IonList,
-  IonLabel, IonCardTitle, IonIcon, IonCardHeader, IonSpinner, IonChip // Added IonChip
+  IonLabel, IonCardTitle, IonIcon, IonCardHeader, IonSpinner, IonChip, IonRippleEffect,
+  IonAvatar, IonBadge, IonSkeletonText, IonProgressBar, IonFab, IonFabButton
 } from '@ionic/angular/standalone';
 import { WorkLocationService, WorkLocationSettings } from 'src/app/services/location.service';
 
@@ -39,440 +42,796 @@ import { WorkLocationService, WorkLocationSettings } from 'src/app/services/loca
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    DatePipe, // Make sure DatePipe is imported
-    TitleCasePipe, // Make sure TitleCasePipe is imported
+    DatePipe,
+    TitleCasePipe,
     IonContent, IonHeader, IonTitle, IonToolbar, IonCard, IonCardContent,
     IonBackButton, IonButtons, IonItem, IonButton, IonRadioGroup, IonRadio, IonList,
-    IonLabel, IonCardTitle, IonIcon, IonCardHeader, IonSpinner, IonChip // Added IonChip
+    IonLabel, IonCardTitle, IonIcon, IonCardHeader, IonSpinner, IonChip, IonRippleEffect,
+    IonAvatar, IonBadge, IonSkeletonText, IonProgressBar, IonFab, IonFabButton
   ],
   template: `
-    <ion-header class="ion-no-border">
-      <ion-toolbar color="primary">
-        <ion-buttons slot="start">
-          <ion-back-button defaultHref="/admin-dashboard"></ion-back-button> <!-- Adjust defaultHref -->
-        </ion-buttons>
-        <ion-title class="ion-text-center">Geo-Badge Station</ion-title>
-      </ion-toolbar>
-    </ion-header>
+<ion-header class="ion-no-border">
+  <ion-toolbar color="primary" class="modern-toolbar">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/admin-dashboard"></ion-back-button>
+    </ion-buttons>
+    <ion-title class="ion-text-center">
+      <span class="title-text">Badge Station</span>
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="verifyLocation()" [disabled]="isVerifyingLocation">
+        <ion-icon slot="icon-only" name="refresh-outline" [class.spin-icon]="isVerifyingLocation"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <!-- Status indicator bar -->
+  <div class="status-indicator">
+    <ion-progress-bar *ngIf="isVerifyingLocation" type="indeterminate" color="light"></ion-progress-bar>
+  </div>
+</ion-header>
 
-    <ion-content class="ion-padding">
-      <div class="container">
+<ion-content>
+  <div class="main-content">
+    <!-- Welcome message and date -->
+    <div class="welcome-section">
+      <div class="welcome-avatar">
+        <ion-avatar>
+          <ion-icon name="finger-print-outline" class="avatar-icon"></ion-icon>
+        </ion-avatar>
+      </div>
+      <div class="welcome-text">
+        <h2>{{ getGreeting() }}</h2>
+        <p>{{ getCurrentDate() }}</p>
+      </div>
+    </div>
 
-        <!-- Location Status Card -->
-        <ion-card class="status-card location-card"
-          [class.verified]="isLocationVerified"
-          [class.error]="!isLocationVerified && !!locationError"
-          [class.verifying]="isVerifyingLocation">
+    <!-- Status Cards Row -->
+    <div class="status-cards">
+      <!-- Location Status Card -->
+      <ion-card class="status-card location-status" [ngClass]="{
+        'status-verified': isLocationVerified,
+        'status-error': !isLocationVerified && locationError,
+        'status-pending': isVerifyingLocation
+      }">
+        <div class="status-icon">
+          <ion-icon [name]="isLocationVerified ? 'checkmark-circle-outline' : (locationError ? 'close-circle-outline' : 'navigate-outline')"></ion-icon>
+        </div>
+        <div class="status-content">
+          <h3>Location</h3>
+          <p *ngIf="isVerifyingLocation">Verifying...</p>
+          <p *ngIf="!isVerifyingLocation && isLocationVerified">Verified</p>
+          <p *ngIf="!isVerifyingLocation && !isLocationVerified" class="status-message">{{ locationError || 'Not verified' }}</p>
+        </div>
+      </ion-card>
+
+      <!-- Shift Status Card -->
+      <ion-card class="status-card shift-status" [ngClass]="{
+        'status-active': currentBadgedShift,
+        'status-break': currentBadgedShift?.status === 'on-break',
+        'status-inactive': !currentBadgedShift
+      }">
+        <div class="status-icon">
+          <ion-icon [name]="currentBadgedShift ? (currentBadgedShift.status === 'on-break' ? 'pause-outline' : 'hourglass-outline') : 'timer-outline'"></ion-icon>
+        </div>
+        <div class="status-content">
+          <h3>Shift</h3>
+          <p *ngIf="!currentBadgedShift">Not active</p>
+          <p *ngIf="currentBadgedShift" class="status-message">{{ currentBadgedShift.status === 'on-break' ? 'On break' : 'Active' }}</p>
+        </div>
+      </ion-card>
+
+      <!-- Day Status Card -->
+      <ion-card class="status-card day-status" [ngClass]="{
+  'status-closed': isClosingDay,
+  'status-absence': isAbsent && !isClosingDay,
+  'status-active': !isClosingDay && !isAbsent && availableShifts.length > 0,
+  'status-inactive': !isClosingDay && !isAbsent && availableShifts.length === 0
+}">
+  <div class="status-icon">
+    <ion-icon [name]="isClosingDay ? 'calendar-outline' :
+              (isAbsent ? 'airplane-outline' :
+              (availableShifts.length > 0 ? 'briefcase-outline' : 'time-outline'))"></ion-icon>
+  </div>
+  <div class="status-content">
+    <h3>Day</h3>
+    <p *ngIf="isClosingDay">Closed</p>
+    <p *ngIf="isAbsent && !isClosingDay">Leave</p>
+    <p *ngIf="!isClosingDay && !isAbsent && availableShifts.length > 0">Working</p>
+    <p *ngIf="!isClosingDay && !isAbsent && availableShifts.length === 0">Not Working</p>
+  </div>
+</ion-card>
+    </div>
+
+    <!-- Only show content below if employee ID is known -->
+    <ng-container *ngIf="employeeId">
+
+      <!-- Current Activity Card -->
+      <div class="activity-section" *ngIf="currentBadgedShift">
+        <ion-card class="activity-card">
           <ion-card-header>
-            <ion-icon
-              [name]="isLocationVerified ? 'checkmark-circle-outline' : (isVerifyingLocation ? 'refresh-outline' : (locationError ? 'close-circle-outline' : 'location-outline'))"
-              [color]="isLocationVerified ? 'success' : (isVerifyingLocation ? 'medium' : (locationError ? 'danger' : 'medium'))"
-              [class.spin-icon]="isVerifyingLocation"
-              slot="start"
-              class="status-icon"></ion-icon>
-            <ion-card-title>Location Status</ion-card-title>
+            <ion-card-title>
+              <ion-icon name="hourglass-outline"></ion-icon>
+              Current Activity
+            </ion-card-title>
           </ion-card-header>
           <ion-card-content>
-            <div *ngIf="isVerifyingLocation">
-              <ion-spinner name="dots" color="primary"></ion-spinner> Verifying location...
-            </div>
-            <div *ngIf="!isVerifyingLocation">
-              <p *ngIf="isLocationVerified" class="ion-text-success">
-                <ion-icon name="location-outline" slot="start"></ion-icon>
-                You are within the allowed work area.
-              </p>
-              <p *ngIf="!isLocationVerified && locationError" class="ion-text-danger">
-                 <ion-icon name="warning-outline" slot="start"></ion-icon>
-                 {{ locationError }}
-              </p>
-              <p *ngIf="!getCurrentSettings() && !locationError">
-                <ion-icon name="settings-outline" slot="start"></ion-icon>
-                Work location settings not yet loaded or configured.
-              </p>
-              <ion-button
-                fill="outline"
-                size="small"
-                (click)="verifyLocation()"
-                [disabled]="isVerifyingLocation || !getCurrentSettings()">
-                <ion-icon name="refresh-outline" slot="start"></ion-icon>
-                {{ isLocationVerified ? 'Re-verify' : 'Verify Location' }}
-              </ion-button>
+            <div class="activity-details">
+              <div class="activity-item">
+                <div class="activity-label">
+                  <ion-icon name="time-outline" color="primary"></ion-icon>
+                  <span>Check-in</span>
+                </div>
+                <div class="activity-value">{{ currentBadgedShift.badgeInTime | date: 'h:mm a' }}</div>
+              </div>
+
+              <div class="activity-item">
+                <div class="activity-label">
+                  <ion-icon name="information-circle-outline" color="primary"></ion-icon>
+                  <span>Status</span>
+                </div>
+                <div class="activity-value">
+                  <ion-chip [color]="currentBadgedShift.status === 'on-break' ? 'warning' : 'success'" class="status-chip">
+                    <ion-icon [name]="currentBadgedShift.status === 'on-break' ? 'pause-outline' : 'flash-outline'"></ion-icon>
+                    <ion-label>{{ currentBadgedShift.status | titlecase }}</ion-label>
+                  </ion-chip>
+                </div>
+              </div>
+
+              <div class="activity-item" *ngIf="currentBadgedShift.shiftId === 'extra'">
+                <div class="activity-label">
+                  <ion-icon name="add-circle-outline" color="primary"></ion-icon>
+                  <span>Type</span>
+                </div>
+                <div class="activity-value">
+                  <ion-chip color="secondary" class="status-chip">
+                    <ion-icon name="build-outline"></ion-icon>
+                    <ion-label>Extra Shift</ion-label>
+                  </ion-chip>
+                </div>
+              </div>
+
+              <div class="activity-time">
+                <div class="time-elapsed">
+                  <ion-icon name="timer-outline"></ion-icon>
+                  <span>{{ getElapsedTime(currentBadgedShift.badgeInTime) }}</span>
+                </div>
+              </div>
             </div>
           </ion-card-content>
         </ion-card>
+      </div>
 
-        <!-- Only show content below if employee ID is known -->
-         <ng-container *ngIf="employeeId">
-
-            <!-- Closing Day Message -->
-            <ion-card *ngIf="isClosingDay" class="status-card closed-card">
-              <ion-card-header>
-                <ion-icon name="calendar-outline" class="status-icon"></ion-icon>
-                <ion-card-title>Company Closed</ion-card-title>
-              </ion-card-header>
-              <ion-card-content>
-                Badge actions unavailable - company is closed today.
-              </ion-card-content>
-            </ion-card>
-
-            <!-- Absence Message -->
-            <ion-card *ngIf="isAbsent && !isClosingDay" class="status-card absence-card">
-              <ion-card-header>
-                <ion-icon name="airplane-outline" class="status-icon"></ion-icon>
-                <ion-card-title>On Leave</ion-card-title>
-              </ion-card-header>
-              <ion-card-content>
-                Badge actions unavailable - you are on approved leave.
-              </ion-card-content>
-            </ion-card>
-
-            <!-- Available Shifts (Show only if not closing day/absent AND (location verified OR currently checked in)) -->
-            <ng-container *ngIf="!isClosingDay && !isAbsent && (isLocationVerified || currentBadgedShift)">
-               <form [formGroup]="shiftSelectionForm">
-                  <ion-card class="shift-card" *ngIf="availableShifts.length > 0 || showExtraOption">
-                     <ion-card-header>
-                      <ion-card-title>Select Shift</ion-card-title>
-                     </ion-card-header>
-                     <ion-card-content>
-                      <ion-radio-group formControlName="selectedShiftId" [disabled]="!!currentBadgedShift"> <!-- Disable selection if already checked in -->
-                        <!-- Regular Shifts -->
-                        <ion-item *ngFor="let shift of availableShifts" class="shift-item" lines="full">
-                          <ion-label>
-                            <h2>{{ shift.role }}</h2>
-                            <p>
-                              <ion-icon name="time-outline"></ion-icon>
-                              {{ shift.startTime }} - {{ shift.endTime }}
-                            </p>
-                            <p *ngIf="shift.completed" class="completed-text">
-                              <ion-icon name="checkmark-circle-outline"></ion-icon>
-                              Already completed today
-                            </p>
-                          </ion-label>
-                          <ion-radio slot="end" [value]="shift.id" [disabled]="shift.completed || !!currentBadgedShift"></ion-radio>
-                        </ion-item>
-
-                        <!-- Extra Shift Option -->
-                         <ion-item class="shift-item extra-shift-item" lines="none">
-                          <ion-label>
-                            <h2>Extra Shift</h2>
-                            <p>
-                              <ion-icon name="add-circle-outline"></ion-icon>
-                              Unscheduled working time
-                            </p>
-                             <!-- Check if extra already done - Requires checkExistingBadgedShift to return Observable or Promise -->
-                             <p *ngIf="extraShiftCompletedToday !== null && extraShiftCompletedToday" class="completed-text">
-                               <ion-icon name="checkmark-circle-outline"></ion-icon>
-                               Extra shift completed today
-                             </p>
-                          </ion-label>
-                           <ion-radio slot="end" value="extra" [disabled]="extraShiftCompletedToday || !!currentBadgedShift"></ion-radio>
-                        </ion-item>
-
-                      </ion-radio-group>
-                     </ion-card-content>
-                  </ion-card>
-               </form>
-
-               <!-- Action Buttons (Show only if location verified OR currently checked in) -->
-               <div class="action-buttons">
-                <ion-button
-                  expand="block"
-                  class="badge-button"
-                  (click)="handleBadging()"
-                  [disabled]="!canBadge() || isProcessing">
-                  <ion-spinner *ngIf="isProcessing" slot="start"></ion-spinner>
-                  <ion-icon *ngIf="!isProcessing" [name]="!currentBadgedShift ? 'log-in-outline' : 'log-out-outline'" slot="start"></ion-icon>
-                  {{ getBadgeActionText() }}
-                </ion-button>
-
-                <ion-button
-                  expand="block"
-                  class="break-button"
-                  *ngIf="canTakeBreak()"
-                  (click)="handleBreak()">
-                    <ion-icon [name]="currentBadgedShift?.status === 'on-break' ? 'play-outline' : 'pause-outline'" slot="start"></ion-icon>
-                    {{ currentBadgedShift?.status === 'on-break' ? 'End Break' : 'Start Break' }}
-                </ion-button>
-               </div>
-            </ng-container>
-
-            <!-- Current Shift Status -->
-            <ion-card *ngIf="currentBadgedShift" class="status-card active-shift-card">
-              <ion-card-header>
-                <ion-icon name="hourglass-outline" class="status-icon"></ion-icon>
-                <ion-card-title>Current Activity</ion-card-title>
-              </ion-card-header>
-              <ion-card-content>
-                <ion-list lines="none" class="transparent-list">
-                  <ion-item class="transparent-item">
-                    <ion-icon name="time-outline" slot="start" color="success"></ion-icon>
-                    <ion-label>
-                      <h3>Check-in Time</h3>
-                      <p>{{ currentBadgedShift.badgeInTime | date: 'MMM d, y, h:mm a' }}</p>
-                    </ion-label>
-                  </ion-item>
-                  <ion-item class="transparent-item">
-                    <ion-icon name="information-circle-outline" slot="start" color="primary"></ion-icon>
-                    <ion-label>
-                      <h3>Status</h3>
-                       <ion-chip [color]="currentBadgedShift.status === 'on-break' ? 'warning' : 'success'" outline="false"> <!-- Changed outline -->
-                         <ion-label>{{ currentBadgedShift.status | titlecase }}</ion-label>
-                        </ion-chip>
-                    </ion-label>
-                  </ion-item>
-                  <ion-item *ngIf="currentBadgedShift.shiftId === 'extra'" class="transparent-item">
-                    <ion-icon name="add-circle-outline" slot="start" color="secondary"></ion-icon>
-                    <ion-label>
-                      <h3>Shift Type</h3>
-                       <ion-chip color="secondary" outline="false"> <!-- Changed outline -->
-                          <ion-label>Extra Shift</ion-label>
-                        </ion-chip>
-                    </ion-label>
-                  </ion-item>
-                   <!-- Removed getShiftDetails as it requires extra setup -->
-                </ion-list>
-              </ion-card-content>
-            </ion-card>
-
-         </ng-container> <!-- End employeeId check -->
-
-         <!-- Show login prompt if no employeeId -->
-         <ion-card *ngIf="!employeeId" class="status-card warning-card">
+      <!-- Available Shifts (Show only if not closing day/absent AND (location verified OR currently checked in)) -->
+      <ng-container *ngIf="!isClosingDay && !isAbsent && (isLocationVerified || currentBadgedShift)">
+        <form [formGroup]="shiftSelectionForm" *ngIf="!currentBadgedShift && (availableShifts.length > 0 || showExtraOption)">
+          <ion-card class="shifts-card">
             <ion-card-header>
-              <ion-icon name="log-in-outline" slot="start"></ion-icon>
-              <ion-card-title>Authentication Required</ion-card-title>
+              <ion-card-title>
+                <ion-icon name="people-outline"></ion-icon>
+                Select Shift
+              </ion-card-title>
             </ion-card-header>
             <ion-card-content>
-                Please log in to use the Geo-Badge feature.
-                 <!-- Add a login button if applicable -->
-                 <!-- <ion-button expand="block" routerLink="/login">Go to Login</ion-button> -->
-            </ion-card-content>
-         </ion-card>
+              <ion-radio-group formControlName="selectedShiftId">
+                <!-- Regular Shifts -->
+                <ion-item *ngFor="let shift of availableShifts" class="shift-item" lines="full" detail="false">
+                  <div class="shift-content">
+                    <div class="shift-info">
+                      <h4>{{ shift.role }}</h4>
+                      <p class="shift-time">
+                        <ion-icon name="time-outline"></ion-icon>
+                        {{ shift.startTime }} - {{ shift.endTime }}
+                      </p>
+                      <p *ngIf="shift.completed" class="completed-text">
+                        <ion-icon name="checkmark-circle-outline"></ion-icon>
+                        Completed today
+                      </p>
+                    </div>
+                  </div>
+                  <ion-radio slot="end" [value]="shift.id" [disabled]="shift.completed"></ion-radio>
+                </ion-item>
 
+                <!-- Extra Shift Option -->
+                <ion-item class="shift-item extra-shift-item">
+                  <div class="shift-content">
+                    <div class="shift-info">
+                      <h4>Extra Shift</h4>
+                      <p class="shift-time">
+                        <ion-icon name="add-circle-outline"></ion-icon>
+                        Unscheduled work
+                      </p>
+                      <p *ngIf="extraShiftCompletedToday" class="completed-text">
+                        <ion-icon name="checkmark-circle-outline"></ion-icon>
+                        Completed today
+                      </p>
+                    </div>
+                  </div>
+                  <ion-radio slot="end" value="extra" [disabled]="extraShiftCompletedToday"></ion-radio>
+                </ion-item>
+              </ion-radio-group>
+            </ion-card-content>
+          </ion-card>
+        </form>
+      </ng-container>
+
+      <!-- Status Messages for Closed/Absent -->
+      <ion-card *ngIf="isClosingDay" class="message-card closed-card">
+        <ion-card-content>
+          <div class="message-content">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <div class="message-text">
+              <h3>Company Closed</h3>
+              <p>Badge actions unavailable today</p>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <ion-card *ngIf="isAbsent && !isClosingDay" class="message-card absence-card">
+        <ion-card-content>
+          <div class="message-content">
+            <ion-icon name="airplane-outline"></ion-icon>
+            <div class="message-text">
+              <h3>On Leave</h3>
+              <p>Badge actions unavailable during leave</p>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Action Buttons -->
+      <div class="action-section" *ngIf="!isClosingDay && !isAbsent && (isLocationVerified || currentBadgedShift)">
+        <ion-button
+          class="badge-button"
+          [ngClass]="{'check-in': !currentBadgedShift, 'check-out': currentBadgedShift}"
+          expand="block"
+          (click)="handleBadging()"
+          [disabled]="!canBadge() || isProcessing">
+          <div class="button-content">
+            <ion-spinner *ngIf="isProcessing"></ion-spinner>
+            <ion-icon *ngIf="!isProcessing" [name]="!currentBadgedShift ? 'log-in-outline' : 'log-out-outline'"></ion-icon>
+            <span>{{ getBadgeActionText() }}</span>
+          </div>
+        </ion-button>
+
+        <ion-button
+          *ngIf="canTakeBreak()"
+          class="break-button"
+          [ngClass]="{'start-break': currentBadgedShift?.status !== 'on-break', 'end-break': currentBadgedShift?.status === 'on-break'}"
+          expand="block"
+          (click)="handleBreak()">
+          <div class="button-content">
+            <ion-icon [name]="currentBadgedShift?.status === 'on-break' ? 'play-outline' : 'pause-outline'"></ion-icon>
+            <span>{{ currentBadgedShift?.status === 'on-break' ? 'End Break' : 'Start Break' }}</span>
+          </div>
+        </ion-button>
       </div>
-    </ion-content>
+
+    </ng-container>
+
+    <!-- Show login prompt if no employeeId -->
+    <ion-card *ngIf="!employeeId" class="login-card">
+      <ion-card-content>
+        <div class="login-content">
+          <ion-icon name="log-in-outline"></ion-icon>
+          <h3>Authentication Required</h3>
+          <p>Please log in to use the Badge Station</p>
+          <ion-button expand="block" routerLink="/login">Go to Login</ion-button>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Floating Action Button for Location Refresh -->
+    <ion-fab *ngIf="employeeId && !isVerifyingLocation" vertical="bottom" horizontal="end" slot="fixed">
+      <ion-fab-button (click)="verifyLocation()" color="light" size="small">
+        <ion-icon name="navigate-outline"></ion-icon>
+      </ion-fab-button>
+    </ion-fab>
+
+  </div>
+</ion-content>
   `,
   styles: [`
-    /* Gradient background - Optional */
-    ion-content {
-      /* --background: linear-gradient(135deg, #6e7bca 0%, #4d80a3 100%); */
-      --background: #f4f5f8; /* Simple light background */
-    }
+:host {
+  --primary-gradient: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-primary-shade) 100%);
+  --success-gradient: linear-gradient(135deg, var(--ion-color-success) 0%, var(--ion-color-success-shade) 100%);
+  --warning-gradient: linear-gradient(135deg, var(--ion-color-warning) 0%, var(--ion-color-warning-shade) 100%);
+  --danger-gradient: linear-gradient(135deg, var(--ion-color-danger) 0%, var(--ion-color-danger-shade) 100%);
+  --card-border-radius: 16px;
+  --card-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --icon-size-small: 18px;
+  --icon-size-medium: 24px;
+  --icon-size-large: 32px;
+}
 
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 16px 0;
-    }
+/* Header Styles */
+.modern-toolbar {
+  --background: var(--primary-gradient);
+  height: 70px;
+  display: flex;
+  align-items: center;
+}
 
-    .status-card {
-      margin-bottom: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      border-left: 5px solid var(--ion-color-medium); /* Default border */
-      --background: #ffffff; /* Default card background */
+.title-text {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-size: 20px;
+}
 
-      ion-card-header {
-          display: flex;
-          align-items: center;
-          padding-bottom: 8px;
-          border-bottom: 1px solid var(--ion-color-light-shade);
-          margin-bottom: 8px;
-      }
+.status-indicator {
+  height: 3px;
+  background: transparent;
+}
 
-      ion-card-title {
-          font-size: 1.1em;
-          font-weight: 600;
-          margin-left: 8px;
-          color: var(--ion-color-dark-shade);
-      }
+/* Content Styles */
+ion-content {
+  --background: #f8f9fd;
+}
 
-      .status-icon {
-          font-size: 28px;
-      }
+.main-content {
+  max-width: 650px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
 
-      ion-list {
-        background: transparent;
-        padding-top: 0;
-        padding-bottom: 0;
-      }
-      ion-list.transparent-list {
-        background: transparent;
-        --ion-item-background: transparent;
-      }
-      ion-item.transparent-item {
-          --background: transparent;
-          --padding-start: 4px; /* Adjust padding */
-          --inner-padding-end: 0;
-          --min-height: 45px;
-          ion-label h3 {
-              font-weight: 500;
-              font-size: 0.9em;
-              color: var(--ion-color-medium-shade);
-              margin-bottom: 2px;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-          }
-          ion-label p, ion-chip ion-label {
-               font-size: 1em;
-               color: var(--ion-color-dark-tint);
-               font-weight: 500;
-          }
-          ion-icon {
-            margin-right: 12px;
-            font-size: 20px; /* Slightly smaller icon in list */
-            margin-top: auto; /* Align icon vertically */
-            margin-bottom: auto;
-          }
-      }
-       ion-chip {
-         height: 30px;
-         font-size: 0.9em;
-         margin-left: 0; /* Align chip left */
-         --padding-start: 12px;
-         --padding-end: 12px;
-       }
-    }
+/* Welcome Section */
+.welcome-section {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 0 8px;
+}
 
-    .location-card {
-       border-color: var(--ion-color-medium);
-       &.verified {
-          border-color: var(--ion-color-success);
-       }
-       &.error {
-          border-color: var(--ion-color-danger);
-       }
-       &.verifying {
-          border-color: var(--ion-color-primary);
-       }
-       ion-card-content {
-           padding-top: 10px;
-       }
-       ion-button {
-          margin-top: 10px;
-       }
-    }
+.welcome-avatar {
+  margin-right: 16px;
+}
 
-    .closed-card {
-      border-color: var(--ion-color-danger-shade);
-      background-color: #fff0f0;
-      color: #b71c1c;
-    }
+.welcome-avatar ion-avatar {
+  width: 60px;
+  height: 60px;
+  background: var(--primary-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-    .absence-card {
-      border-color: var(--ion-color-warning-shade);
-      background-color: #fff9e6;
-      color: #f57f17;
-    }
+.avatar-icon {
+  font-size: 32px;
+  color: white;
+}
 
-    .active-shift-card {
-      border-color: var(--ion-color-success-shade);
-      background-color: #e8f5e9;
-      color: #2e7d32;
-    }
-    .warning-card {
-       border-color: var(--ion-color-warning);
-       background-color: #fffbeb;
-       color: #b26f00;
-    }
+.welcome-text h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--ion-color-dark);
+}
 
-    .shift-card {
-      margin-bottom: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      border-left: 5px solid var(--ion-color-primary);
-       --background: #ffffff;
+.welcome-text p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--ion-color-medium);
+}
 
-       ion-card-header {
-          border-bottom: none;
-          padding-bottom: 0;
-       }
+/* Status Cards */
+.status-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
 
-       ion-item.shift-item {
-        --inner-padding-end: 8px;
-        --min-height: 65px;
-        --background: transparent; /* Ensure item background is transparent */
+.status-card {
+  margin: 0;
+  padding: 16px;
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-box-shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 0.3s ease;
+}
 
-        ion-label h2 {
-            font-weight: 600;
-            font-size: 1em;
-            margin-bottom: 4px;
-             color: var(--ion-color-dark);
-        }
-        ion-label p {
-            font-size: 0.9em;
-            color: var(--ion-color-medium-shade);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-         ion-label p ion-icon {
-            font-size: 16px; /* Smaller icon in text */
-         }
+.status-icon {
+  margin-bottom: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--ion-color-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-         &.extra-shift-item {
-          border-top: 1px dashed var(--ion-color-medium-tint);
-          margin-top: 8px;
-          padding-top: 8px;
-         }
+.status-icon ion-icon {
+  font-size: var(--icon-size-medium);
+  color: var(--ion-color-medium);
+}
 
-         ion-radio {
-             margin-left: 10px;
-         }
-      }
+.status-content h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
 
-       .completed-text {
-          color: var(--ion-color-success-shade);
-          font-weight: 500;
-          font-size: 0.85em !important;
-       }
-       .completed-text ion-icon {
-          color: var(--ion-color-success);
-       }
-    }
+.status-content p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ion-color-medium);
+}
 
+.status-message {
+  font-weight: 500;
+}
 
-    .action-buttons {
-      margin-top: 25px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
+/* Status Card States */
+.status-verified .status-icon {
+  background: rgba(var(--ion-color-success-rgb), 0.15);
+}
 
-      ion-button {
-          height: 50px;
-          font-weight: 600;
-          --border-radius: 25px;
-          text-transform: uppercase;
-          font-size: 1em;
-          --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      }
+.status-verified .status-icon ion-icon {
+  color: var(--ion-color-success);
+}
 
-      .badge-button {
-          --background: var(--ion-color-primary);
-          --background-activated: var(--ion-color-primary-shade);
-          --color: var(--ion-color-primary-contrast);
+.status-error .status-icon {
+  background: rgba(var(--ion-color-danger-rgb), 0.15);
+}
 
-           &[disabled] {
-              --background: var(--ion-color-medium-tint);
-              --color: var(--ion-color-dark-tint);
-              --box-shadow: none;
-           }
-      }
+.status-error .status-icon ion-icon {
+  color: var(--ion-color-danger);
+}
 
-      .break-button {
-          --background: var(--ion-color-warning);
-          --background-activated: var(--ion-color-warning-shade);
-          --color: #fff; /* Ensure contrast */
-          --box-shadow: 0 4px 10px rgba(255, 152, 0, 0.15);
+.status-pending .status-icon {
+  background: rgba(var(--ion-color-primary-rgb), 0.15);
+}
 
-            &[disabled] {
-              --background: var(--ion-color-medium-tint);
-              --color: var(--ion-color-dark-tint);
-              --box-shadow: none;
-           }
-      }
-    }
+.status-pending .status-icon ion-icon {
+  color: var(--ion-color-primary);
+}
 
+.status-active .status-icon {
+  background: rgba(var(--ion-color-success-rgb), 0.15);
+}
+
+.status-active .status-icon ion-icon {
+  color: var(--ion-color-success);
+}
+
+.status-break .status-icon {
+  background: rgba(var(--ion-color-warning-rgb), 0.15);
+}
+
+.status-break .status-icon ion-icon {
+  color: var(--ion-color-warning);
+}
+.status-inactive .status-icon {
+  background: rgba(var(--ion-color-medium-rgb), 0.15);
+}
+
+.status-inactive .status-icon ion-icon {
+  color: var(--ion-color-medium);
+}
+.status-closed .status-icon {
+  background: rgba(var(--ion-color-danger-rgb), 0.15);
+}
+
+.status-closed .status-icon ion-icon {
+  color: var(--ion-color-danger);
+}
+
+.status-absence .status-icon {
+  background: rgba(var(--ion-color-warning-rgb), 0.15);
+}
+
+.status-absence .status-icon ion-icon {
+  color: var(--ion-color-warning);
+}
+
+/* Activity Card */
+.activity-card {
+  margin: 0 0 24px;
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-box-shadow);
+  overflow: hidden;
+}
+
+.activity-card ion-card-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(var(--ion-color-light-rgb), 0.7);
+}
+
+.activity-card ion-card-title {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+
+.activity-card ion-card-title ion-icon {
+  margin-right: 8px;
+  font-size: var(--icon-size-medium);
+  color: var(--ion-color-primary);
+}
+
+.activity-details {
+  padding: 0;
+}
+
+.activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(var(--ion-color-light-rgb), 0.7);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-label {
+  display: flex;
+  align-items: center;
+}
+
+.activity-label ion-icon {
+  margin-right: 8px;
+  font-size: var(--icon-size-small);
+}
+
+.activity-label span {
+  font-size: 14px;
+  color: var(--ion-color-medium);
+  font-weight: 500;
+}
+
+.activity-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
+
+.activity-time {
+  padding: 12px 0 0;
+  display: flex;
+  justify-content: center;
+}
+
+.time-elapsed {
+  background: rgba(var(--ion-color-primary-rgb), 0.1);
+  border-radius: 100px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  color: var(--ion-color-primary);
+  font-weight: 600;
+}
+
+.time-elapsed ion-icon {
+  margin-right: 8px;
+  font-size: var(--icon-size-small);
+}
+
+.status-chip {
+  height: 28px;
+  font-size: 12px;
+  border-radius: 100px;
+  font-weight: 600;
+}
+
+/* Shifts Card */
+.shifts-card {
+  margin: 0 0 24px;
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-box-shadow);
+}
+
+.shifts-card ion-card-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(var(--ion-color-light-rgb), 0.7);
+}
+
+.shifts-card ion-card-title {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+
+.shifts-card ion-card-title ion-icon {
+  margin-right: 8px;
+  font-size: var(--icon-size-medium);
+  color: var(--ion-color-primary);
+}
+
+.shift-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --inner-padding-end: 0;
+  --background: transparent;
+}
+
+.shift-content {
+  flex: 1;
+  padding: 12px 0;
+}
+
+.shift-info h4 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
+
+.shift-time {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: var(--ion-color-medium);
+  margin: 0 0 4px;
+}
+
+.shift-time ion-icon {
+  margin-right: 6px;
+  font-size: var(--icon-size-small);
+}
+
+.completed-text {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: var(--ion-color-success);
+  margin: 4px 0 0;
+}
+
+.completed-text ion-icon {
+  margin-right: 6px;
+  font-size: var(--icon-size-small);
+}
+
+.extra-shift-item {
+  border-top: 1px dashed rgba(var(--ion-color-medium-rgb), 0.3);
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+/* Message Cards */
+.message-card {
+  margin: 0 0 24px;
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-box-shadow);
+}
+
+.message-content {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+}
+
+.message-content ion-icon {
+  font-size: var(--icon-size-large);
+  margin-right: 16px;
+}
+
+.message-text h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
+
+.message-text p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--ion-color-medium);
+}
+
+.closed-card {
+  border-left: 4px solid var(--ion-color-danger);
+}
+
+.closed-card ion-icon {
+  color: var(--ion-color-danger);
+}
+
+.absence-card {
+  border-left: 4px solid var(--ion-color-warning);
+}
+
+.absence-card ion-icon {
+  color: var(--ion-color-warning);
+}
+
+/* Action Buttons */
+.action-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.badge-button, .break-button {
+  margin: 0;
+  height: 56px;
+  --border-radius: 28px;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button-content ion-icon {
+  margin-right: 8px;
+  font-size: var(--icon-size-medium);
+}
+
+.check-in {
+  --background: var(--success-gradient);
+}
+
+.check-out {
+  --background: var(--danger-gradient);
+}
+
+.start-break {
+  --background: var(--warning-gradient);
+}
+
+.end-break {
+  --background: #f8b133;
+}
+
+/* Login Card */
+.login-card {
+  margin: 0;
+  border-radius: var(--card-border-radius);
+  box-shadow: var(--card-box-shadow);
+}
+
+.login-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.login-content ion-icon {
+  font-size: 48px;
+  color: var(--ion-color-primary);
+  margin-bottom: 16px;
+}
+
+.login-content h3 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.login-content p {
+  margin: 0 0 24px;
+  font-size: 16px;
+  color: var(--ion-color-medium);
+}
+
+.login-content ion-button {
+  --border-radius: 28px;
+  height: 56px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* Spin animation for refresh icon
+
+    /* --- Utility --- */
     /* Spin animation for refresh icon */
     @keyframes spin {
       from { transform: rotate(0deg); }
@@ -482,12 +841,26 @@ import { WorkLocationService, WorkLocationSettings } from 'src/app/services/loca
       animation: spin 1.5s linear infinite;
     }
 
-    ion-radio[disabled] {
-       opacity: 0.5;
-    }
-  `]
+    .transparent-list {
+       background: transparent;
+       --ion-item-background: transparent;
+    }`]
 })
 export class GeoBadgePage implements OnInit, OnDestroy {
+  getElapsedTime(arg0: Date) {
+    const now = new Date();
+    const elapsed = Math.floor((now.getTime() - new Date(arg0).getTime()) / 1000); // in seconds
+    const hours = Math.floor(elapsed / 3600);
+    const minutes = Math.floor((elapsed % 3600) / 60);
+    const seconds = elapsed % 60;
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+  getCurrentDate() {
+    return new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+  getGreeting() {
+    return 'Hello!'; // Placeholder for greeting logic
+  }
   shiftSelectionForm: FormGroup;
   currentBadgedShift: BadgedShift | null = null;
   isProcessing = false;
@@ -883,5 +1256,19 @@ export class GeoBadgePage implements OnInit, OnDestroy {
     this.dataSub?.unsubscribe();
     this.authSub?.unsubscribe();
     this.currentShiftSub?.unsubscribe();
+  }
+  // In your GeoBadgePage class
+  isSelectedShiftCompleted(): boolean {
+    if (this.currentBadgedShift) return false; // Not applicable if already checked in
+
+    const selectedId = this.shiftSelectionForm.get('selectedShiftId')?.value;
+    if (!selectedId) return false;
+
+    if (selectedId === 'extra') {
+      return this.extraShiftCompletedToday === true;
+    } else {
+      const selectedShift = this.availableShifts.find(s => s.id === selectedId);
+      return selectedShift?.completed === true;
+    }
   }
 }
