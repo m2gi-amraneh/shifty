@@ -801,6 +801,13 @@ export class GeoBadgePage implements OnInit, OnDestroy {
         if (selectedShiftId === 'extra') this.extraShiftCompletedToday = false; // Mark as "in progress", not completed yet
 
       } else { // Check OUT
+        if (!this.currentBadgedShift?.id) {
+          console.error("Attempted to check out but current shift ID is missing.", this.currentBadgedShift);
+          this.showToast('Error: Cannot check out, shift ID is missing.', 'danger');
+          this.isProcessing = false; // Reset processing state
+          if (loader) await loader.dismiss(); // Dismiss loader
+          return; // Stop execution
+        }
         await this.badgeService.completeBadgedShift(this.currentBadgedShift.id!);
         this.showToast('Successfully checked out', 'success');
         // Trigger refresh of completed status after checkout

@@ -12,7 +12,7 @@ import {
   updateDoc,
   collectionData,
 } from '@angular/fire/firestore';
-import { Observable, from } from 'rxjs';
+import { Observable, from, map } from 'rxjs';
 import { orderBy, Timestamp } from 'firebase/firestore';
 
 export interface BadgedShift {
@@ -166,14 +166,28 @@ export class BadgeService {
     );
   }
   getBadgedShiftsRealtime(employeeId: string): Observable<BadgedShift[]> {
+    const badgeCollection = collection(this.firestore, 'badgedShifts');
+    const q = query(
+      badgeCollection,
+      where('employeeId', '==', employeeId),
+      orderBy('badgeInTime', 'desc')
+    );
 
-    return collectionData(
-      query(
-        collection(this.firestore, 'badgedShifts'),
-        where('employeeId', '==', employeeId),
-        orderBy('badgeInTime', 'desc')
-      )
-    ) as Observable<BadgedShift[]>;
+    // Use collectionData for real-time updates
+    return collectionData(q, { idField: 'id' }).pipe(
+      map(shifts => shifts.map(shift => ({
+        id: shift['id'],
+        employeeId: shift['employeeId'],
+        shiftId: shift['shiftId'],
+        badgeInTime: shift['badgeInTime'] instanceof Timestamp
+          ? (shift['badgeInTime'] as Timestamp).toDate()
+          : shift['badgeInTime'],
+        badgeOutTime: shift['badgeOutTime'] instanceof Timestamp
+          ? (shift['badgeOutTime'] as Timestamp).toDate()
+          : shift['badgeOutTime'],
+        status: shift['status']
+      } as BadgedShift)))
+    );
   }
   getBadgedShiftsBetweenDates(
     employeeId: string,
