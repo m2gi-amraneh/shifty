@@ -50,8 +50,8 @@ import { WorkLocationService, WorkLocationSettings } from 'src/app/services/loca
     IonAvatar, IonBadge, IonSkeletonText, IonProgressBar, IonFab, IonFabButton
   ],
   template: `
-<ion-header class="ion-no-border">
-  <ion-toolbar color="primary" class="modern-toolbar">
+<ion-header  class="modern-toolbar" class="ion-no-border">
+  <ion-toolbar  class="modern-toolbar">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/admin-dashboard"></ion-back-button>
     </ion-buttons>
@@ -346,7 +346,7 @@ import { WorkLocationService, WorkLocationSettings } from 'src/app/services/loca
 
 /* Header Styles */
 .modern-toolbar {
-  --background: var(--primary-gradient);
+  --background:  #81D4FA;
   height: 70px;
   display: flex;
   align-items: center;
@@ -365,7 +365,7 @@ import { WorkLocationService, WorkLocationSettings } from 'src/app/services/loca
 
 /* Content Styles */
 ion-content {
-  --background: #f8f9fd;
+  --background: #81D4FA;
 }
 
 .main-content {
@@ -410,7 +410,7 @@ ion-content {
 .welcome-text p {
   margin: 4px 0 0;
   font-size: 14px;
-  color: var(--ion-color-medium);
+  color: var(--ion-color-dark);
 }
 
 /* Status Cards */
@@ -859,7 +859,7 @@ export class GeoBadgePage implements OnInit, OnDestroy {
     return new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   }
   getGreeting() {
-    return 'Hello!'; // Placeholder for greeting logic
+    return 'Hello, Pret a Travailler !'; // Placeholder for greeting logic
   }
   shiftSelectionForm: FormGroup;
   currentBadgedShift: BadgedShift | null = null;

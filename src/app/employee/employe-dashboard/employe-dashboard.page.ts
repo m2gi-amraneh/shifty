@@ -22,15 +22,15 @@ import {
   personOutline,
   qrCode,
   qrCodeOutline,
-  timeOutline,
+  timeOutline, hourglassOutline, documentTextOutline
 } from 'ionicons/icons';
 import { addIcons } from 'ionicons';
 import { AuthService } from '../../services/auth.service';
 addIcons({
   personOutline,
   peopleOutline,
-  calendarNumberOutline,
-  documentOutline,
+  calendarNumberOutline, hourglassOutline,
+  documentOutline, documentTextOutline,
   calendarOutline, logOutOutline, qrCodeOutline, timeOutline, calendarClearOutline, fingerPrintOutline, chatbubbleEllipsesOutline
 });
 
@@ -47,7 +47,7 @@ addIcons({
 })
 export class EmployeDashboardPage {
   constructor(private authService: AuthService, private router: Router) {
-    addIcons({ logOutOutline, fingerPrintOutline, calendarNumberOutline, calendarOutline, timeOutline, calendarClearOutline, chatbubbleEllipsesOutline });
+    addIcons({ logOutOutline, hourglassOutline, fingerPrintOutline, calendarNumberOutline, calendarOutline, timeOutline, documentTextOutline, calendarClearOutline, chatbubbleEllipsesOutline });
   }
 
 

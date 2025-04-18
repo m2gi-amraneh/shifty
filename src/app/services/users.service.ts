@@ -80,4 +80,16 @@ export class UsersService {
       })
     );
   }
+  getuserbyid(uid: string): Promise<any> {
+    const usersRef = collection(this.firestore, 'users');
+    const userQuery = query(usersRef, where('id', '==', uid));
+    return getDocs(userQuery).then(snapshot => {
+      if (snapshot.empty) {
+        return null;
+      } else {
+        const doc = snapshot.docs[0];
+        return { id: doc.id, ...doc.data() };
+      }
+    });
+  }
 }

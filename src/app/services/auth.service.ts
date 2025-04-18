@@ -307,4 +307,5 @@ export class AuthService {
   resetPassword(email: string): Promise<void> {
     return sendPasswordResetEmail(this.auth, email);
   }
+
 }
