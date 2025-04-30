@@ -12,6 +12,7 @@ $RECYCLE.BIN/
 *.log
 log.txt
 
+/firebase-migration/node_modules
 
 /.sourcemaps
 /.versions
@@ -68,3 +69,5 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+

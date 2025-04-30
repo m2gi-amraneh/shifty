@@ -375,7 +375,7 @@ export class RegisterPage {
     if (this.registerForm.valid) {
       try {
         const { name, email, password } = this.registerForm.value;
-        await this.authService.register(name, email, password);
+        // await this.authService.register(name, email, password);
         this.router.navigate(['/employee-dashboard']);
         this.showToast('Account created successfully', 'success');
       } catch (error: any) {

@@ -160,4 +160,8 @@ export const routes: Routes = [
     path: 'geo-badge',
     loadComponent: () => import('./employee/geo-badge/geo-badge.page').then(m => m.GeoBadgePage)
   },
+  {
+    path: 'statistics',
+    loadComponent: () => import('./employer/stat/stat.component').then(m => m.AdminOvertimeStatsPage)
+  },
 ];

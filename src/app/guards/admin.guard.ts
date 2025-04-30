@@ -26,7 +26,7 @@ export class AdminGuard implements CanActivate {
       take(1),
       switchMap((user) => {
         if (user && user.uid) {
-          return from(this.authService.getUserRole(user.uid)).pipe(
+          return from(this.authService.getCurrentRoleOB()).pipe(
             map((role) => {
               if (role === 'admin') {
                 return true;

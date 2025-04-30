@@ -324,7 +324,7 @@ export class QrScanPage implements OnInit {
   async ngOnInit() {
     const userId = this.authService.getCurrentUserId();
     if (userId) {
-      this.userRole = await this.authService.getUserRole(userId);
+      this.userRole = this.authService.getCurrentRole();
     }
   }
 }

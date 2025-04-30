@@ -484,7 +484,7 @@ export class BadgedShiftsPage implements OnInit, OnDestroy {
           return this.authService.getCurrentUser().pipe(
             switchMap((user) => {
               this.EmployeeId = user?.uid || null;
-              return this.badgeService.getBadgedShiftsRealtime(user?.uid);
+              return this.badgeService.getBadgedShiftsRealtime(user?.uid ? user.uid : '');
             })
           );
         }

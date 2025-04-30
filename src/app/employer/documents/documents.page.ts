@@ -1,20 +1,23 @@
-import { Component, ViewChild, ElementRef, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, AfterViewInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { Storage, ref, uploadBytes, getDownloadURL } from '@angular/fire/storage';
-import { Firestore, doc, getDoc, updateDoc, collection, query, where, getDocs } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, updateDoc, collection, query, where, getDocs, limit, Timestamp } from '@angular/fire/firestore';
 import SignaturePad from 'signature_pad';
 import { jsPDF } from 'jspdf';
 import { AlertController, LoadingController, ModalController } from '@ionic/angular';
 import { Auth } from '@angular/fire/auth';
-import { ContractService } from '../../services/contract.service';
-import { Observable, of, Subscription } from 'rxjs';
+import { Contract, ContractService } from '../../services/contract.service';
+import { combineLatest, Observable, of, Subscription } from 'rxjs';
 import { BrowserModule } from '@angular/platform-browser';
 import { addIcons } from 'ionicons';
 import { add, closeCircleOutline, closeOutline, createOutline, documentTextOutline, eyeOutline, refreshOutline, saveOutline } from 'ionicons/icons';
 import { Employee, UsersService } from '../../services/users.service';
-import { PositionsService } from '../../services/positions.service';
+import { Position, PositionsService } from '../../services/positions.service';
+import { AuthService, UserMetadata } from 'src/app/services/auth.service';
+import { ToastController } from '@ionic/angular';
+import { catchError, filter, switchMap, tap } from 'rxjs/operators';
 addIcons({
   eyeOutline, documentTextOutline, refreshOutline, saveOutline, closeOutline, createOutline, add
 });
@@ -584,270 +587,348 @@ addIcons({
   `]
 })
 export class AdminContractsPage implements OnInit, OnDestroy {
-  @ViewChild('employerSignatureCanvas') employerSignatureCanvas!: ElementRef;
+  @ViewChild('employerSignatureCanvas', { static: false }) employerSignatureCanvas!: ElementRef;
   employerSignaturePad: SignaturePad | undefined;
-  selectedContract: any = null; // For viewing details
-  editingContractData: any = null; // New property to hold the contract being edited
-  contracts: any[] = [];
-  filteredContracts: any[] = [];
-  selectedSegment: string = 'all';
+
+  // State Properties
+  selectedContract: Contract | null = null; // For viewing details
+  editingContractData: Contract | null = null; // Holds the original contract being edited
+  contracts: Contract[] = []; // All contracts for the current business
+  filteredContracts: Contract[] = []; // Contracts filtered by segment/search
+  selectedSegment: string = 'all'; // 'all', 'pending', 'signed', 'terminated'
   searchTerm: string = '';
   isContractFormOpen: boolean = false;
-  editingContract: boolean = false;
-  contractForm: FormGroup;
-  employees: Employee[] = [];
-  positions: any[] = [];
+  editingContract: boolean = false; // Flag: true if editing, false if creating
+  isLoading: boolean = true;
+  errorLoading: boolean = false;
+  employees: Employee[] = []; // Employees for the current business
+  positions: Position[] = []; // Positions for the current business
+  currentUser: UserMetadata | null = null; // Store current user metadata
 
-  private contractsSubscription: Subscription | undefined;
-  private positionsSubscription: Subscription | undefined;
-  private employeesSubscription: Subscription | undefined;
+  contractForm: FormGroup; // Form group for creating/editing
 
-  constructor(
-    private fb: FormBuilder,
-    private storage: Storage,
-    private firestore: Firestore,
-    private auth: Auth,
-    private contractService: ContractService,
-    private positionsService: PositionsService,
-    private usersService: UsersService,
-    private alertController: AlertController,
-    private loadingController: LoadingController,
-    private modalController: ModalController
-  ) {
+  private subscriptions = new Subscription(); // Manage all subscriptions
+
+  // Injected Services
+  private fb: FormBuilder = inject(FormBuilder);
+  private storage: Storage = inject(Storage);
+  private firestore: Firestore = inject(Firestore);
+  private authService: AuthService = inject(AuthService); // Tenant-aware
+  private contractService: ContractService = inject(ContractService); // Tenant-aware
+  private positionsService: PositionsService = inject(PositionsService); // Tenant-aware
+  private usersService: UsersService = inject(UsersService); // Tenant-aware
+  private alertController: AlertController = inject(AlertController);
+  private loadingController: LoadingController = inject(LoadingController);
+  private modalController: ModalController = inject(ModalController); // If using Ionic Modals for form
+  private cdr: ChangeDetectorRef = inject(ChangeDetectorRef); // For manual change detection
+  private toastController: ToastController = inject(ToastController); // Added ToastController
+  creatingRoom: boolean | undefined;
+
+  constructor() {
     this.contractForm = this.createContractForm();
+    // Restore segment preference
+    const savedSegment = localStorage.getItem('adminContractSegment');
+    if (savedSegment && ['all', 'pending', 'signed', 'terminated'].includes(savedSegment)) {
+      this.selectedSegment = savedSegment;
+    }
   }
 
   ngOnInit() {
-    this.subscribeToContracts();
-    this.subscribeToPositions();
-    this.subscribeToEmployees();
+    console.log("AdminContractsPage: OnInit");
+    this.subscribeToAuthAndLoadData();
   }
-
-
 
   ngOnDestroy() {
-    // Clean up subscriptions to prevent memory leaks
-    if (this.contractsSubscription) {
-      this.contractsSubscription.unsubscribe();
-    }
-
-    if (this.positionsSubscription) {
-      this.positionsSubscription.unsubscribe();
-    }
-
-    if (this.employeesSubscription) {
-      this.employeesSubscription.unsubscribe();
-    }
+    console.log("AdminContractsPage: OnDestroy");
+    this.subscriptions.unsubscribe(); // Clean up all subscriptions
   }
 
+  /** Subscribe to Auth state and load dependent data */
+  private subscribeToAuthAndLoadData() {
+    this.isLoading = true;
+    this.errorLoading = false;
+    this.cdr.detectChanges();
+
+    const authSub = this.authService.userMetadata$.pipe(
+      tap(userMeta => {
+        this.currentUser = userMeta; // Store current user
+        console.log("AdminContractsPage: Current User Meta:", userMeta);
+        if (!userMeta || !userMeta.businessId) {
+          // Handle logout or missing business context
+          this.isLoading = false;
+          this.errorLoading = !userMeta; // Error if logged out after init
+          this.contracts = [];
+          this.filteredContracts = [];
+          this.employees = [];
+          this.positions = [];
+          this.cdr.detectChanges();
+        }
+      }),
+      filter((userMeta): userMeta is UserMetadata => !!userMeta && !!userMeta.uid && !!userMeta.businessId), // Proceed only with valid user and business
+      // Once we have user/business context, load everything else
+      switchMap(userMeta => {
+        console.log(`AdminContractsPage: Loading data for business ${userMeta.businessId}`);
+        // Use combineLatest to load contracts, positions, employees concurrently
+        return combineLatest([
+          this.contractService.getContracts().pipe(catchError(err => { console.error("Error loading contracts", err); return of([]); })), // Service is tenant-aware
+          this.positionsService.getPositions().pipe(catchError(err => { console.error("Error loading positions", err); return of([]); })), // Service is tenant-aware
+          this.usersService.getEmployees().pipe(catchError(err => { console.error("Error loading employees", err); return of([]); })) // Service is tenant-aware (assuming getEmployees is adapted)
+        ]);
+      }),
+      // Catch errors from combineLatest or upstream
+      catchError(error => {
+        console.error('Error loading initial data:', error);
+        this.isLoading = false;
+        this.errorLoading = true;
+        this.showToast('Failed to load necessary data.', 'danger');
+        this.cdr.detectChanges();
+        return of([[], [], []]); // Return empty arrays on error
+      })
+    ).subscribe(([contracts, positions, employees]) => {
+      console.log(`AdminContractsPage: Data received - Contracts: ${contracts.length}, Positions: ${positions.length}, Employees: ${employees.length}`);
+      this.contracts = contracts as Contract[]; // Cast needed if service returns 'any[]'
+      this.positions = positions as Position[];
+      this.employees = employees as Employee[];
+      this.filterContracts(); // Apply initial filter
+      this.isLoading = false;
+      this.errorLoading = false; // Clear error on success
+      this.cdr.detectChanges(); // Ensure UI updates
+    });
+
+    this.subscriptions.add(authSub);
+  }
+
+
+  /** Creates the initial form group */
   private createContractForm(): FormGroup {
     return this.fb.group({
+      // Keep required fields
       employeeId: ['', Validators.required],
-      employeeName: ['', Validators.required],
+      employeeName: [{ value: '', disabled: true }, Validators.required], // Keep disabled, set via selection
       contractType: ['full-time', Validators.required],
-      position: ['', Validators.required],
+      position: ['', Validators.required], // Changed from positionId to store name directly? Or keep ID? Let's store Name based on form
       contractHours: [40, [Validators.required, Validators.min(1)]],
       salary: [0, [Validators.required, Validators.min(0)]],
       startDate: [new Date().toISOString().split('T')[0], Validators.required],
-      endDate: [''],
-      status: ['active']
+      // Optional fields
+      endDate: [''], // Default to empty string
+      // Internal fields (not directly edited by user here)
+      // status: ['active'], // Status determined by logic/signing
+      // signed: [false],
+      // createdAt: [null],
+      // updatedAt: [null],
+      // terminatedAt: [null],
+      // signedAt: [null],
+      // contractUrl: ['']
     });
   }
 
-  private subscribeToContracts() {
-    // Create an observable for real-time contract updates
-    const contractsObservable = this.contractService.getContracts();
 
-    this.contractsSubscription = contractsObservable.subscribe(
-      (contracts) => {
-        this.contracts = contracts;
-        this.filterContracts();
-      },
-      (error) => {
-        console.error('Error loading contracts:', error);
-        this.showAlert('Error', 'Failed to load contracts');
-      }
-    );
-  }
-
-  private subscribeToPositions() {
-    this.positionsSubscription = this.positionsService.getPositions().subscribe(
-      (positions: any[]) => {
-        this.positions = positions;
-      },
-      (error: any) => {
-        console.error('Error loading positions:', error);
-        this.showAlert('Error', 'Failed to load positions');
-      }
-    );
-  }
-
-  private subscribeToEmployees() {
-    this.employeesSubscription = this.usersService.getEmployees().subscribe(
-      (employees: Employee[]) => {
-        this.employees = employees;
-      },
-      (error: any) => {
-        console.error('Error loading employees:', error);
-        this.showAlert('Error', 'Failed to load employees');
-      }
-    );
-  }
-
+  /** Filter contracts based on segment and search term */
   filterContracts() {
     let filtered = [...this.contracts];
 
     // Filter by segment
     if (this.selectedSegment !== 'all') {
       if (this.selectedSegment === 'pending') {
-        filtered = filtered.filter(c => !c.signed && c.status === 'active');
+        filtered = filtered.filter(c => c.status === 'active' && !c.signed);
       } else if (this.selectedSegment === 'signed') {
-        filtered = filtered.filter(c => c.signed && c.status === 'active');
+        filtered = filtered.filter(c => c.status === 'active' && c.signed);
       } else if (this.selectedSegment === 'terminated') {
-        filtered = filtered.filter(c => c.status === 'terminated');
+        filtered = filtered.filter(c => c.status === 'terminated' || c.status === 'expired');
       }
     }
 
-    // Filter by search term
-    if (this.searchTerm.trim() !== '') {
-      const term = this.searchTerm.toLowerCase();
+    // Filter by search term (case-insensitive)
+    if (this.searchTerm && this.searchTerm.trim() !== '') {
+      const term = this.searchTerm.toLowerCase().trim();
       filtered = filtered.filter(c =>
         c.employeeName?.toLowerCase().includes(term) ||
-        c.position?.toLowerCase().includes(term)
+        c.position?.toLowerCase().includes(term) || // Search position name if available
+        c.positionName?.toLowerCase().includes(term)
       );
     }
 
-    this.filteredContracts = filtered;
+    // Optional: Sort results
+    this.filteredContracts = filtered.sort((a, b) => {
+      try {
+        // Sort by start date descending by default
+        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+      } catch { return 0; }
+    });
+    this.cdr.detectChanges(); // Update view
   }
 
+  /** Handle segment change */
   onSegmentChange(event: any) {
     this.selectedSegment = event.detail.value;
+    if (['all', 'pending', 'signed', 'terminated'].includes(this.selectedSegment)) {
+      localStorage.setItem('adminContractSegment', this.selectedSegment);
+    }
     this.filterContracts();
   }
 
-  selectContract(contract: any) {
-    this.selectedContract = contract;
+  /** View contract details */
+  selectContract(contract: Contract) {
+    console.log("AdminContractsPage: Selecting contract for viewing:", contract?.id);
+    if (!contract || !contract.id) {
+      console.error("AdminContractsPage: Attempted to select an invalid contract object.");
+      this.showToast("Could not open contract details.", "danger");
+      return;
+    }
+    this.selectedContract = { ...contract };
+    // Force change detection immediately after setting the state
+    this.cdr.detectChanges(); // Add this line if absolutely necessary
+    console.log("AdminContractsPage: selectedContract state updated and detectChanges called.");
   }
 
-  getContractStatus(contract: any): string {
-    if (contract.status === 'terminated') return 'Terminated';
+  /** Get display status text */
+  getContractStatus(contract: Contract): string {
+    if (!contract) return 'Unknown';
+    if (contract.status === 'terminated' || contract.status === 'expired') return 'Terminated';
     if (contract.signed) return 'Signed';
     return 'Pending Signature';
   }
 
-  getBadgeColor(contract: any): string {
-    if (contract.status === 'terminated') return 'danger';
+  /** Get badge color based on status */
+  getBadgeColor(contract: Contract): string {
+    if (!contract) return 'medium';
+    if (contract.status === 'terminated' || contract.status === 'expired') return 'danger';
     if (contract.signed) return 'success';
-    return 'warning';
+    return 'warning'; // Pending
   }
 
+  /** Open the modal/form for creating a new contract */
   async openContractForm() {
-    this.isContractFormOpen = true;
     this.editingContract = false;
-    this.contractForm.reset({
+    this.editingContractData = null;
+    this.contractForm.reset({ // Reset with defaults
       contractType: 'full-time',
       contractHours: 40,
       startDate: new Date().toISOString().split('T')[0],
-      status: 'active',
-      salary: 0
+      status: 'active', // Implicitly active when created
+      salary: 0,
+      employeeId: '',
+      employeeName: '',
+      position: '',
+      endDate: ''
     });
-
-    setTimeout(() => {
-      this.initializeEmployerSignaturePad();
-    }, 150);
+    this.employerSignaturePad?.clear(); // Clear signature pad if exists
+    this.isContractFormOpen = true; // Show the modal/form
+    // Initialize signature pad after modal is likely visible
+    setTimeout(() => { this.initializeEmployerSignaturePad(); }, 150);
   }
 
+  /** Close the contract form modal/view */
   closeContractForm() {
     this.isContractFormOpen = false;
+    this.editingContract = false;
+    this.editingContractData = null;
+    this.employerSignaturePad?.clear();
+    this.employerSignaturePad = undefined; // Release pad instance
   }
 
+  /** Pre-fill form for editing an existing contract */
   async editContract() {
     if (!this.selectedContract) return;
+    // Prevent editing signed contracts
     if (this.selectedContract.signed) {
-      await this.showAlert('Not Allowed', 'Signed contracts cannot be edited');
+      await this.showToast('Signed contracts cannot be edited.', 'warning');
       return;
     }
 
     this.editingContract = true;
-    this.editingContractData = { ...this.selectedContract }; // Store the contract being edited
+    // Clone the contract data to avoid modifying the original object directly
+    this.editingContractData = { ...this.selectedContract };
+
     this.contractForm.patchValue({
-      employeeId: this.selectedContract.employeeId,
-      employeeName: this.selectedContract.employeeName,
-      contractType: this.selectedContract.contractType,
-      position: this.selectedContract.position,
-      contractHours: this.selectedContract.contractHours,
-      salary: this.selectedContract.salary,
-      startDate: new Date(this.selectedContract.startDate).toISOString().split('T')[0],
-      endDate: this.selectedContract.endDate ? new Date(this.selectedContract.endDate).toISOString().split('T')[0] : '',
-      status: this.selectedContract.status
+      employeeId: this.editingContractData.employeeId,
+      employeeName: this.editingContractData.employeeName,
+      contractType: this.editingContractData.contractType,
+      position: this.editingContractData.position, // Or positionName if that's what you store/select
+      contractHours: this.editingContractData.contractHours,
+      salary: this.editingContractData.salary,
+      // Format dates for the input type="date"
+      startDate: this.formatDateForInput(this.editingContractData.startDate),
+      endDate: this.formatDateForInput(this.editingContractData.endDate),
+      // status: this.editingContractData.status // Don't usually edit status directly here
     });
 
-    // Don’t clear selectedContract here; keep it for viewing if needed
-    // this.selectedContract = null; // Remove this line
-    this.isContractFormOpen = true;
+    this.isContractFormOpen = true; // Open the form modal
+    this.selectedContract = null; // Close the details view if it was open
 
-    setTimeout(() => {
-      this.initializeEmployerSignaturePad();
-    }, 150);
+    // Initialize signature pad after modal is likely visible
+    setTimeout(() => { this.initializeEmployerSignaturePad(); }, 150);
   }
+
+  /** Handle employee selection change */
   async onEmployeeChange(event: any) {
     const employeeId = event.detail.value;
-
-    if (!employeeId) return;
-
-    // First, set the employee name
     const selectedEmployee = this.employees.find(emp => emp.id === employeeId);
+
     if (selectedEmployee) {
-      this.contractForm.patchValue({
-        employeeName: selectedEmployee.name
-      });
-    }
+      // Set employee name (it's disabled, so use patchValue)
+      this.contractForm.patchValue({ employeeName: selectedEmployee.name });
 
-    // Then, check if the employee already has an active contract
-    try {
-      const loading = await this.loadingController.create({
-        message: 'Checking employee status...',
-        duration: 1000
-      });
-      await loading.present();
-
-      const hasActiveContract = await this.checkEmployeeHasActiveContract(employeeId);
-
-      if (hasActiveContract && !this.editingContract) {
-        await this.showAlert('Warning', 'This employee already has an active contract. Please terminate the existing contract before creating a new one.');
-        this.contractForm.patchValue({
-          employeeId: '',
-          employeeName: ''
-        });
+      // Check for existing active contract *only if creating a new one*
+      if (!this.editingContract) {
+        const loading = await this.loadingController.create({ message: 'Checking employee status...' });
+        await loading.present();
+        try {
+          const hasActiveContract = await this.checkEmployeeHasActiveContract(employeeId);
+          if (hasActiveContract) {
+            this.showAlert('Warning', 'This employee already has an active contract. Terminate the existing one before creating a new contract.');
+            this.contractForm.patchValue({ employeeId: '', employeeName: '' }); // Reset selection
+          }
+        } catch (error) {
+          console.error("Error checking active contract:", error);
+          this.showToast("Could not verify employee's contract status.", "danger");
+        } finally {
+          await loading.dismiss();
+        }
       }
-    } catch (error) {
-      console.error('Error checking employee contract status:', error);
+    } else {
+      this.contractForm.patchValue({ employeeName: '' }); // Clear name if employee not found
     }
   }
 
+  /**
+   * ADAPTED: Checks if an employee has an active contract WITHIN the current business.
+   */
   private async checkEmployeeHasActiveContract(employeeId: string): Promise<boolean> {
-    try {
-      const contractsRef = collection(this.firestore, 'contracts');
-      const q = query(
-        contractsRef,
-        where('employeeId', '==', employeeId),
-        where('status', '==', 'active')
-      );
+    const businessId = this.authService.getCurrentBusinessId(); // Get tenant context
+    if (!businessId) {
+      console.warn("checkEmployeeHasActiveContract: No business context.");
+      // Depending on desired behavior, could throw or return false
+      return false;
+    }
+    if (!employeeId) return false;
 
+    const collectionPath = `business/${businessId}/contracts`; // Tenant-specific path
+    console.log(`checkEmployeeHasActiveContract: Querying ${collectionPath}`);
+    try {
+      const q = query(
+        collection(this.firestore, collectionPath),
+        where('employeeId', '==', employeeId),
+        where('status', '==', 'active'),
+        limit(1) // Only need to know if one exists
+      );
       const snapshot = await getDocs(q);
 
-      // If we're editing, we need to exclude the current contract
-      if (this.editingContract && this.selectedContract) {
-        return snapshot.docs.some(doc => doc.id !== this.selectedContract.id);
+      // If editing, ensure we don't count the contract being edited
+      if (this.editingContract && this.editingContractData?.id) {
+        return snapshot.docs.some(doc => doc.id !== this.editingContractData!.id);
       }
+      return !snapshot.empty; // True if any active contract exists (and not editing that one)
 
-      return !snapshot.empty;
     } catch (error) {
       console.error('Error checking for active contracts:', error);
+      // Decide how to handle error - maybe rethrow or return false
       return false;
     }
   }
 
+  // --- Signature Pad Methods (No tenant changes needed) ---
   private initializeEmployerSignaturePad() {
     if (this.employerSignatureCanvas && this.employerSignatureCanvas.nativeElement) {
       const canvas = this.employerSignatureCanvas.nativeElement;
@@ -862,223 +943,259 @@ export class AdminContractsPage implements OnInit, OnDestroy {
       console.error('Employer signature canvas not found');
     }
   }
-
-  clearEmployerSignature() {
-    if (this.employerSignaturePad) {
-      this.employerSignaturePad.clear();
-    }
+  clearEmployerSignature() { /* ... same logic ... */
+    if (this.employerSignaturePad) { this.employerSignaturePad.clear(); }
   }
-
-  isEmployerSignatureValid(): boolean {
+  isEmployerSignatureValid(): boolean { /* ... same logic ... */
     return this.employerSignaturePad?.isEmpty() === false;
   }
 
-  formatDate(dateString: string): string {
-    return dateString ? new Date(dateString).toLocaleDateString() : '';
+  // --- Date Formatting ---
+  formatDate(dateInput: string | Date | Timestamp | undefined): string {
+    if (!dateInput) return 'N/A';
+    try {
+      let date: Date;
+      if (dateInput instanceof Timestamp) date = dateInput.toDate();
+      else if (dateInput instanceof Date) date = dateInput;
+      else date = new Date(dateInput);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch (e) { return 'Invalid Date'; }
   }
 
+  formatDateForInput(dateInput: string | Date | Timestamp | undefined | null): string {
+    if (!dateInput) return '';
+    try {
+      let date: Date;
+      if (dateInput instanceof Timestamp) date = dateInput.toDate();
+      else if (dateInput instanceof Date) date = dateInput;
+      else date = new Date(dateInput);
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    } catch (e) { return ''; }
+  }
+
+  // --- Save/Update Contract ---
+  /** ADAPTED: Saves a new or updates an existing contract */
   async saveContract() {
-    if (!this.contractForm.valid || !this.isEmployerSignatureValid()) {
-      this.showAlert('Error', 'Please fill all required fields and provide your signature');
+    if (!this.contractForm.valid) { this.showToast('Please fill all required fields.', 'warning'); return; }
+    if (!this.isEmployerSignatureValid()) { this.showToast('Employer signature is required.', 'warning'); return; }
+
+    const businessId = this.authService.getCurrentBusinessId(); // Get tenant context
+    const currentUser = this.authService.getCurrentAuthUser(); // Get current user for creator ID (optional)
+
+    if (!businessId || !currentUser?.uid) {
+      this.showToast('Error: Cannot save contract. Missing user or business context.', 'danger');
       return;
     }
 
-    const loading = await this.loadingController.create({
-      message: 'Saving contract...',
-    });
+    const loading = await this.loadingController.create({ message: this.editingContract ? 'Updating contract...' : 'Creating contract...' });
     await loading.present();
 
     try {
       const formData = this.contractForm.value;
+      const employerSignatureDataUrl = this.employerSignaturePad!.toDataURL('image/png');
 
-      console.log('Editing contract:', this.editingContract);
-      console.log('Editing contract data:', this.editingContractData);
-
-      if (!this.editingContract) {
-        const hasActiveContract = await this.checkEmployeeHasActiveContract(formData.employeeId);
-        if (hasActiveContract) {
-          await loading.dismiss();
-          await this.showAlert('Error', 'This employee already has an active contract. Please terminate the existing contract first.');
-          return;
-        }
-      }
-
-      const employerSignatureData = this.employerSignaturePad!.toDataURL('image/png');
+      // Generate PDF (no tenant change needed for PDF generation itself)
       const pdf = new jsPDF();
-      pdf.setFontSize(20);
-      pdf.text('EMPLOYMENT CONTRACT', 20, 20);
-      pdf.setFontSize(12);
-      const content = [
-        `Employee: ${formData.employeeName}`,
-        `Position: ${formData.position}`,
-        `Contract Type: ${formData.contractType}`,
-        `Hours: ${formData.contractHours} per week`,
-        `Salary: ${formData.salary}€`,
-        `Start Date: ${new Date(formData.startDate).toLocaleDateString()}`,
-        `End Date: ${formData.endDate ? new Date(formData.endDate).toLocaleDateString() : 'Ongoing'}`
-      ];
-      content.forEach((text, index) => pdf.text(text, 20, 40 + (index * 10)));
-      pdf.addImage(employerSignatureData, 'PNG', 20, 120, 70, 40);
-      pdf.text('Employer Signature', 20, 170);
-      pdf.text(`Date: ${new Date().toLocaleDateString()}`, 20, 180);
-      pdf.text('Employee Signature', 120, 170);
-      pdf.rect(120, 120, 70, 40);
-
+      // ... (add content to PDF - consider adding business name/info) ...
+      pdf.setFontSize(18); pdf.text('Employment Contract', 105, 20, { align: 'center' });
+      pdf.setFontSize(10);
+      pdf.text(`Business ID: ${businessId}`, 15, 30); // Add business ID to PDF
+      pdf.text(`Employee: ${formData.employeeName} (ID: ${formData.employeeId})`, 15, 40);
+      pdf.text(`Position: ${formData.position}`, 15, 50);
+      pdf.text(`Type: ${formData.contractType}`, 15, 60);
+      pdf.text(`Hours/Week: ${formData.contractHours}`, 15, 70);
+      pdf.text(`Salary: ${formData.salary} EUR`, 15, 80);
+      pdf.text(`Start Date: ${this.formatDate(formData.startDate)}`, 15, 90);
+      pdf.text(`End Date: ${formData.endDate ? this.formatDate(formData.endDate) : 'Ongoing'}`, 15, 100);
+      pdf.addImage(employerSignatureDataUrl, 'PNG', 15, 115, 80, 40); // Employer signature
+      pdf.text('Employer Signature', 15, 160);
+      pdf.text(`Date: ${new Date().toLocaleDateString()}`, 15, 165);
+      pdf.rect(110, 115, 80, 40); // Placeholder for employee signature
+      pdf.text('Employee Signature', 110, 160);
       const pdfBlob = pdf.output('blob');
-      let pdfUrl;
-      let contractId;
 
-      if (this.editingContract && this.editingContractData && this.editingContractData.id && this.editingContractData.contractUrl) {
+      let pdfUrl: string;
+      let contractId: string;
+      let storagePath: string;
+
+      // Determine Storage path and Contract ID
+      if (this.editingContract && this.editingContractData?.id) {
         contractId = this.editingContractData.id;
-        console.log('Updating contract with ID:', contractId);
-
-        const existingFilePath = this.editingContractData.contractUrl.split('?')[0].split('/o/')[1].replace(/%2F/g, '/');
-        console.log('Using existing file path:', existingFilePath);
-
-        const storageRef = ref(this.storage, existingFilePath);
-        await uploadBytes(storageRef, pdfBlob);
-        pdfUrl = await getDownloadURL(storageRef);
-        console.log('Updated PDF URL:', pdfUrl);
-      } else if (!this.editingContract) {
-        const fileName = `contracts/${formData.employeeId}_${Date.now()}.pdf`;
-        console.log('Creating new contract with file name:', fileName);
-
-        const storageRef = ref(this.storage, fileName);
-        await uploadBytes(storageRef, pdfBlob);
-        pdfUrl = await getDownloadURL(storageRef);
-        console.log('New PDF URL:', pdfUrl);
+        // Assume URL might be old format OR relative - try to determine path robustly
+        // Best practice: store relative path from the start.
+        if (this.editingContractData.contractUrl?.includes(businessId)) {
+          // Assume URL contains the businessId and is likely relative or easily parsable
+          storagePath = this.editingContractData.contractUrl; // Or parse if needed
+          // If it's a download URL, parse it:
+          // storagePath = this.getPathFromDownloadUrl(this.editingContractData.contractUrl);
+        } else {
+          // If URL is missing or doesn't look right, generate a new path
+          console.warn("Editing contract but URL seems invalid or missing business context. Generating new path.");
+          storagePath = `business/${businessId}/contracts/${contractId}/${formData.employeeId}_contract_${Date.now()}.pdf`;
+        }
       } else {
-        throw new Error('Invalid state: Editing flag is set but no valid contract data provided');
+        // Creating new contract
+        contractId = doc(collection(this.firestore, `business/${businessId}/contracts`)).id; // Generate ID beforehand
+        storagePath = `business/${businessId}/contracts/${contractId}/${formData.employeeId}_contract_${Date.now()}.pdf`;
       }
+      console.log(`Using storage path: ${storagePath}`);
 
-      const contractData: any = {
+      // Upload PDF to Tenant-Aware Storage Path
+      const storageRef = ref(this.storage, storagePath);
+      await uploadBytes(storageRef, pdfBlob, { contentType: 'application/pdf' });
+      pdfUrl = await getDownloadURL(storageRef); // Get download URL for Firestore
+      console.log('PDF uploaded/updated. URL:', pdfUrl);
+
+
+      // Prepare Firestore Data (Convert dates to Timestamps)
+      const contractDataForFirestore = this.contractService['convertDatesToTimestamp']({ // Access private helper (or make public)
         employeeId: formData.employeeId,
         employeeName: formData.employeeName,
         position: formData.position,
+        // positionName: selectedPosition ? selectedPosition.name : formData.position, // Store name if needed
         contractType: formData.contractType,
-        contractHours: formData.contractHours,
-        salary: formData.salary,
+        contractHours: +formData.contractHours, // Ensure number
+        salary: +formData.salary, // Ensure number
         startDate: new Date(formData.startDate),
-        endDate: formData.endDate ? new Date(formData.endDate) : null,
-        status: 'active',
-        updatedAt: new Date(),
-        contractUrl: pdfUrl,
-        positionName: formData.position
-      };
+        endDate: formData.endDate ? new Date(formData.endDate) : undefined, // Keep undefined if empty
+        status: this.editingContract ? (this.editingContractData?.status || 'active') : 'active', // Keep existing status on edit or default active
+        updatedAt: new Date(), // Always set on save/update
+        contractUrl: storagePath, // Store RELATIVE path
+        // Fields specific to existing contract on update
+        createdAt: this.editingContract ? (this.editingContractData?.createdAt || new Date()) : new Date(), // Keep original or set new
+        signed: this.editingContract ? (this.editingContractData?.signed ?? false) : false, // Keep original or default false
+        signedAt: this.editingContract ? this.editingContractData?.signedAt : undefined,
+        terminatedAt: this.editingContract ? this.editingContractData?.terminatedAt : undefined,
+      });
 
-      if (this.editingContract && this.editingContractData && this.editingContractData.id) {
-        // Sanitize optional fields to avoid undefined
-        const updateData = {
-          ...contractData,
-          createdAt: this.editingContractData.createdAt, // Should always exist
-          signed: this.editingContractData.signed ?? false, // Default to false if undefined
-          signedAt: this.editingContractData.signedAt ?? null // Use null if undefined
+
+      // Save/Update Firestore using Tenant-Aware Service
+      if (this.editingContract) {
+        console.log(`Updating contract ${contractId} in Firestore...`);
+        const contractDataWithDates = {
+          ...contractDataForFirestore,
+          startDate: contractDataForFirestore.startDate?.toDate(),
+          endDate: contractDataForFirestore.endDate?.toDate(),
+          createdAt: contractDataForFirestore.createdAt?.toDate(),
+          updatedAt: contractDataForFirestore.updatedAt?.toDate(),
+          signedAt: contractDataForFirestore.signedAt?.toDate(),
+          terminatedAt: contractDataForFirestore.terminatedAt?.toDate(),
         };
-        console.log('Data being sent to update:', updateData);
+        await this.contractService.updateContract(contractId, contractDataWithDates); // Service handles tenant path
+      } else {
+        console.log('Creating new contract in Firestore...');
+        contractDataForFirestore.createdAt = Timestamp.fromDate(new Date()); // Ensure createdAt is set for new
+        // Create using service which handles tenant path and returns ID (though we generated one)
+        const contractDataWithDates = {
+          ...contractDataForFirestore,
+          startDate: contractDataForFirestore.startDate?.toDate(),
+          endDate: contractDataForFirestore.endDate?.toDate(),
+          createdAt: contractDataForFirestore.createdAt?.toDate(),
+          updatedAt: contractDataForFirestore.updatedAt?.toDate(),
+          signedAt: contractDataForFirestore.signedAt?.toDate(),
+          terminatedAt: contractDataForFirestore.terminatedAt?.toDate(),
+        };
+        await this.contractService.createContract(contractDataWithDates);
+      }
 
-        await this.contractService.updateContract(contractId, updateData);
-        console.log('Contract updated in Firestore with ID:', contractId);
-      } else if (!this.editingContract) {
-        contractData.createdAt = new Date();
-        contractData.signed = false;
-        contractData.signedAt = null; // Explicitly set to null for new contracts
-        contractId = await this.contractService.createContract(contractData);
-        console.log('New contract created in Firestore with ID:', contractId);
-
-        try {
-          const employee = this.employees.find(e => e.id === formData.employeeId);
-          if (employee) {
-            const updatedEmployee: Employee = {
-              ...employee,
-              contractHours: formData.contractHours
-            };
-            await this.usersService.updateEmployee(updatedEmployee);
-            console.log('Employee contract hours updated');
-          }
-        } catch (updateError) {
-          console.error('Error updating employee contract hours:', updateError);
-        }
+      // Optional: Update employee record with contract hours (use tenant-aware service)
+      try {
+        console.log(`Updating employee ${formData.employeeId} record...`);
+        await this.usersService.updateEmployee({ // Service handles tenant path
+          id: formData.employeeId,
+          contractHours: +formData.contractHours
+        });
+      } catch (userUpdateError) {
+        console.error("Failed to update user's contract hours, but contract saved.", userUpdateError);
+        // Decide if this warrants showing an error to the admin
       }
 
       await loading.dismiss();
-      this.showAlert(
-        'Success',
-        `Contract ${this.editingContract ? 'updated' : 'created'} successfully! The employee can now view and sign it.`
-      );
-      this.closeContractForm();
-      this.editingContractData = null;
-    } catch (error) {
+      this.showToast(`Contract ${this.editingContract ? 'updated' : 'created'} successfully!`, 'success');
+      this.closeContractForm(); // Close modal
+      // The main list will update via the realtime listener
+
+    } catch (error: any) {
       console.error('Error saving contract:', error);
       await loading.dismiss();
-      this.showAlert('Error', `Failed to ${this.editingContract ? 'update' : 'create'} contract: ` + (error as any).message);
+      this.showToast(`Failed to save contract: ${error.message || 'Unknown error'}`, 'danger');
+    } finally {
+      this.creatingRoom = false; // Alias for savingContract? Use a dedicated flag if needed.
+      this.cdr.detectChanges();
     }
   }
+
+  // --- View Contract ---
+  /** ADAPTED: Views the contract PDF */
   async viewContract() {
-    if (!this.selectedContract?.contractUrl) {
-      this.showAlert('Info', 'Contract document is unavailable.');
-      return;
-    }
+    const storagePath = this.selectedContract?.contractUrl; // Assumes relative path
+    if (!storagePath) { this.showAlert('Info', 'Contract document is unavailable.'); return; }
 
-    window.open(this.selectedContract.contractUrl, '_blank');
+    const loading = await this.loadingController.create({ message: 'Loading document...' });
+    await loading.present();
+    try {
+      const pdfRef = ref(this.storage, storagePath); // Use relative path
+      const url = await getDownloadURL(pdfRef);
+      window.open(url, '_blank'); // Open in new tab/browser
+    } catch (error) {
+      console.error("Error getting contract download URL:", error);
+      this.showToast("Could not load contract document.", "danger");
+    } finally {
+      await loading.dismiss();
+    }
   }
 
+  // --- Terminate Contract ---
   async confirmTerminateContract() {
+    // ... (confirmation logic remains the same) ...
     if (!this.selectedContract) return;
-
     const alert = await this.alertController.create({
       header: 'Confirm Termination',
-      message: `Are you sure you want to terminate the contract with ${this.selectedContract.employeeName}?`,
-      buttons: [
-        {
-          text: 'Cancel',
-          role: 'cancel'
-        },
-        {
-          text: 'Terminate',
-          role: 'destructive',
-          handler: () => {
-            this.terminateContract();
-          }
-        }
-      ]
+      message: `Terminate contract for ${this.selectedContract.employeeName}?`,
+      buttons: [{ text: 'Cancel', role: 'cancel' }, { text: 'Terminate', role: 'destructive', handler: () => this.terminateContract() }]
     });
-
     await alert.present();
   }
 
+  /** ADAPTED: Terminates a contract */
   async terminateContract() {
-    if (!this.selectedContract) return;
+    if (!this.selectedContract?.id) return;
 
-    const loading = await this.loadingController.create({
-      message: 'Terminating contract...',
-    });
+    const loading = await this.loadingController.create({ message: 'Terminating contract...' });
     await loading.present();
 
     try {
-      // Update contract status
+      // Call tenant-aware service method
       await this.contractService.updateContract(this.selectedContract.id, {
         status: 'terminated',
-        updatedAt: new Date(),
-        terminatedAt: new Date()
+        updatedAt: new Date(), // Service converts to Timestamp
+        terminatedAt: new Date() // Service converts to Timestamp
       });
-
-      // No need to update local data since we have realtime updates
-
+      // List will update via listener
       await loading.dismiss();
-      this.showAlert('Success', 'Contract terminated successfully');
-    } catch (error) {
+      this.showToast('Contract terminated successfully', 'success');
+      this.selectedContract = null; // Close details view
+      this.cdr.detectChanges();
+    } catch (error: any) {
       console.error('Error terminating contract:', error);
       await loading.dismiss();
-      this.showAlert('Error', 'Failed to terminate contract: ' + (error as any).message);
+      this.showToast(error.message || 'Failed to terminate contract.', 'danger');
     }
   }
 
-  async showAlert(header: string, message: string) {
-    const alert = await this.alertController.create({
-      header,
-      message,
-      buttons: ['OK']
-    });
-    await alert.present();
+  // --- Alert/Toast Helpers (no changes) ---
+  async showAlert(header: string, message: string) { /* ... same */
+    const alert = await this.alertController.create({ header, message, buttons: ['OK'] }); await alert.present();
+  }
+  async showToast(message: string, color: string = 'primary', duration: number = 3000) { /* ... same */
+    try { const toast = await this.toastController.create({ message, duration, color, position: 'bottom' }); await toast.present(); }
+    catch (e) { console.error("showToast error:", e); }
+  }
+
+  // --- PDF Helper (no changes) ---
+  private async dataURLtoArrayBuffer(dataURL: string): Promise<Uint8Array> { /* ... same */
+    const response = await fetch(dataURL); const blob = await response.blob(); return new Uint8Array(await blob.arrayBuffer());
   }
 }

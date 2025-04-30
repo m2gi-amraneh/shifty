@@ -12,7 +12,8 @@ import {
   logOutOutline,
   bed,
   calendarClearOutline,
-  chatbubbleEllipsesOutline
+  chatbubbleEllipsesOutline,
+  statsChartOutline
 } from 'ionicons/icons';
 import {
   IonContent,
@@ -32,7 +33,7 @@ import {
 // Add the icons to use them
 addIcons({
   bed,
-  qrCodeOutline,
+  qrCodeOutline, statsChartOutline,
   peopleOutline,
   calendarNumberOutline,
   documentOutline,
@@ -76,6 +77,12 @@ addIcons({
 
     <ion-content [fullscreen]="true">
       <div class="dashboard-grid">
+      <ion-card class="dashboard-card card-primary" button routerLink="/statistics">
+          <ion-icon name="stats-chart-outline" class="card-icon" color="primary"></ion-icon>
+          <ion-card-header class="card-content">
+            <ion-card-title> statistics</ion-card-title>
+          </ion-card-header>
+        </ion-card>
         <!-- Card 1: Badge Station -->
         <ion-card class="dashboard-card card-primary" button routerLink="/scan-qr">
           <ion-icon name="qr-code-outline" class="card-icon" color="primary"></ion-icon>

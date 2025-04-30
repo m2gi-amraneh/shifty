@@ -1,25 +1,26 @@
-import { Component, ViewChild, ElementRef, OnInit, AfterViewInit, ViewEncapsulation, OnDestroy } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, AfterViewInit, ViewEncapsulation, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { Storage, ref, uploadBytes, getDownloadURL, getBytes } from '@angular/fire/storage';
-import { Firestore, updateDoc, doc } from '@angular/fire/firestore';
+import { Firestore, updateDoc, doc, Timestamp } from '@angular/fire/firestore';
 import SignaturePad from 'signature_pad';
 
 import { Auth } from '@angular/fire/auth';
 import { Contract, ContractService } from '../../services/contract.service';
 import { PDFDocument } from 'pdf-lib';
 import { addIcons } from 'ionicons';
-import { documentText, briefcase, calendar, cash, time, checkmarkCircle, alertCircle, refreshCircle, close, pencil, person, informationCircle, closeOutline } from 'ionicons/icons';
-import { Subscription, BehaviorSubject, combineLatest } from 'rxjs';
-import { filter, switchMap, tap } from 'rxjs/operators';
-import { AuthService } from '../../services/auth.service';
+import { documentText, briefcase, calendar, cash, time, checkmarkCircle, alertCircle, refreshCircle, close, pencil, person, informationCircle, closeOutline, cloudOfflineOutline } from 'ionicons/icons';
+import { Subscription, BehaviorSubject, combineLatest, of } from 'rxjs';
+import { catchError, filter, switchMap, tap } from 'rxjs/operators';
+import { AuthService, UserMetadata } from '../../services/auth.service';
 import {
   IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent,
   IonSegment, IonSegmentButton, IonLabel, IonSpinner, IonIcon, IonCard,
   IonCardContent, IonBadge, IonModal, IonButton, AlertController,
-  LoadingController, AnimationController
+  LoadingController, AnimationController, ToastController
 } from '@ionic/angular/standalone';
+import { Router } from '@angular/router';
 
 addIcons({
   documentText,
@@ -31,7 +32,7 @@ addIcons({
   alertCircle,
   refreshCircle,
   close,
-  pencil, person, informationCircle
+  pencil, person, informationCircle, cloudOfflineOutline
 });
 
 @Component({
@@ -703,322 +704,374 @@ addIcons({
   `]
 })
 export class UserContractPage implements OnInit, OnDestroy {
-  @ViewChild('signatureCanvas') signatureCanvas!: ElementRef;
+  // --- Element References ---
+  @ViewChild('signatureCanvas', { static: false }) signatureCanvas!: ElementRef;
   signaturePad: SignaturePad | undefined;
 
+  // --- Component State ---
   selectedContract: Contract | null = null;
-  contracts: Contract[] = [];
+  allUserContracts: Contract[] = [];
   filteredContracts: Contract[] = [];
-  selectedSegment: string = 'active';
+  selectedSegment: string = 'active'; // Default segment ('active', 'pending', 'terminated')
   isLoading: boolean = true;
+  errorLoading: boolean = false;
+  signingInProgress: boolean = false;
+  viewingPdf: boolean = false;
 
-  // Use BehaviorSubject to track filter changes
   private filterSubject = new BehaviorSubject<string>('active');
-  private subscriptions: Subscription[] = [];
-  private currentUserId: string | null = null;
+  private subscriptions = new Subscription();
+  private currentUser: UserMetadata | null = null; // Store full UserMetadata
 
-  constructor(
-    private storage: Storage,
-    private firestore: Firestore,
-    private auth: Auth,
-    private authService: AuthService,
-    private contractService: ContractService,
-    private alertController: AlertController,
-    private loadingController: LoadingController,
-    private animationController: AnimationController
-  ) {
-    // Retrieve saved segment preference from localStorage if available
+  // --- Injected Services ---
+  private storage: Storage = inject(Storage);
+  private firestore: Firestore = inject(Firestore);
+  private authService: AuthService = inject(AuthService);
+  private contractService: ContractService = inject(ContractService);
+  private alertController: AlertController = inject(AlertController);
+  private loadingController: LoadingController = inject(LoadingController);
+  private animationController: AnimationController = inject(AnimationController);
+  private cdr: ChangeDetectorRef = inject(ChangeDetectorRef);
+  private toastController: ToastController = inject(ToastController);
+  private router: Router = inject(Router); // Added Router if needed for navigation
+
+  constructor() {
+    // Restore segment preference
     const savedSegment = localStorage.getItem('contractSegment');
-    if (savedSegment) {
+    if (savedSegment && ['active', 'pending', 'terminated'].includes(savedSegment)) {
       this.selectedSegment = savedSegment;
       this.filterSubject.next(savedSegment);
     }
   }
 
   ngOnInit() {
-    // First, set up the authentication state listener
-    const authSub = this.authService.getCurrentUser().pipe(
-      tap(user => {
-        if (user) {
-          this.currentUserId = user.uid;
-          console.log('Current user ID:', this.currentUserId);
-        } else {
-          this.currentUserId = null;
-          this.contracts = [];
-          this.filteredContracts = [];
-        }
-      }),
-      // Only proceed when we have an authenticated user
-      filter(user => !!user)
-    ).subscribe();
-
-    this.subscriptions.push(authSub);
-
-    // Set up contracts subscription with filter changes
-    const contractsSub = combineLatest([
-      this.authService.getCurrentUser().pipe(filter(user => !!user)),
-      this.filterSubject
-    ]).pipe(
-      tap(() => this.isLoading = true),
-      switchMap(([user, filter]) => {
-        console.log(`Loading contracts for user ${user.uid} with filter: ${filter}`);
-        return this.contractService.getContracts();
-      })
-    ).subscribe({
-      next: (contracts) => {
-        if (this.currentUserId) {
-          // Filter contracts for the current user
-          this.contracts = contracts.filter(contract => contract.employeeId === this.currentUserId);
-          this.filterContracts();
-          this.isLoading = false;
-          console.log('Contracts loaded:', this.contracts);
-        }
-      },
-      error: (error) => {
-        console.error('Error loading contracts:', error);
-        this.isLoading = false;
-        this.showAlert('Error', 'Failed to load contracts. Please try again later.');
-      }
-    });
-
-    this.subscriptions.push(contractsSub);
+    console.log("UserContractPage: OnInit");
+    this.loadInitialData();
   }
-
 
   ngOnDestroy() {
-    // Clean up all subscriptions
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    console.log("UserContractPage: OnDestroy");
+    this.subscriptions.unsubscribe();
   }
 
-  filterContracts() {
-    this.filteredContracts = this.contracts.filter(contract =>
-      this.selectedSegment === 'active' ?
-        contract.status === 'active' : // Active contracts
-        contract.status === 'terminated' // Terminated contracts
-    );
-    console.log(`Filtered contracts (${this.selectedSegment}):`, this.filteredContracts);
+  /** Loads user data and then fetches contracts based on user and filter */
+  loadInitialData() {
+    this.isLoading = true;
+    this.errorLoading = false;
+    this.cdr.detectChanges();
+
+    const userSub = this.authService.userMetadata$.pipe(
+      tap(userMeta => {
+        this.currentUser = userMeta;
+        console.log('UserContractPage: Current User Metadata:', this.currentUser);
+        if (!userMeta || !userMeta.uid) {
+          this.isLoading = false;
+          this.allUserContracts = [];
+          this.filteredContracts = [];
+          this.errorLoading = !userMeta;
+          this.cdr.detectChanges();
+        }
+      }),
+      filter((userMeta): userMeta is UserMetadata => !!userMeta && !!userMeta.uid && !!userMeta.businessId),
+      switchMap(userMeta => {
+        return this.filterSubject.pipe(
+          tap(filter => console.log(`UserContractPage: Filter changed to ${filter}, fetching for user ${userMeta.uid} in business ${userMeta.businessId}`)),
+          switchMap(filter => this.contractService.getContracts()) // Service is tenant-aware
+        );
+      }),
+      catchError(error => {
+        console.error('Error loading contracts:', error);
+        this.isLoading = false;
+        this.errorLoading = true;
+        this.allUserContracts = [];
+        this.filteredContracts = [];
+        this.showToast('Failed to load contracts.', 'danger');
+        this.cdr.detectChanges();
+        return of([]);
+      })
+    ).subscribe(contracts => {
+      if (this.currentUser?.uid) {
+        this.allUserContracts = contracts.filter(contract => contract.employeeId === this.currentUser!.uid);
+        this.filterAndSortContracts();
+        this.isLoading = false;
+        this.errorLoading = false;
+        console.log(`UserContractPage: Processed ${this.allUserContracts.length} contracts for user ${this.currentUser.uid}`);
+      } else {
+        this.allUserContracts = [];
+        this.filteredContracts = [];
+        this.isLoading = false;
+      }
+      this.cdr.detectChanges();
+    });
+
+    this.subscriptions.add(userSub);
   }
 
+  /** Refreshes data on pull-to-refresh */
+  handleRefresh(event: any) {
+    console.log("UserContractPage: Refresh triggered");
+    this.loadInitialData(); // Re-initiate the loading sequence
+    setTimeout(() => {
+      if (event?.target?.complete) { event.target.complete(); }
+      if (!this.isLoading && !this.errorLoading) {
+        this.showToast('Contracts updated.', 'success', 1500);
+      }
+    }, 1000);
+  }
+
+  /** Called to manually refresh data, e.g., from a button */
+  refreshData() {
+    this.loadInitialData();
+  }
+
+
+  /** Filters and sorts the contracts based on the selected segment */
+  filterAndSortContracts() {
+    this.filteredContracts = this.allUserContracts
+      .filter(contract => {
+        if (!contract) return false;
+        switch (this.selectedSegment) {
+          case 'active': return contract.status === 'active' && contract.signed;
+          case 'pending': return contract.status === 'active' && !contract.signed;
+          case 'terminated': return contract.status === 'terminated' || contract.status === 'expired';
+          default: return false;
+        }
+      })
+      .sort((a, b) => {
+        const getSortOrder = (c: Contract): number => {
+          if (c.status === 'active' && !c.signed) return 1; // Pending
+          if (c.status === 'active' && c.signed) return 2; // Active Signed
+          return 3; // Terminated/Expired
+        };
+        const orderA = getSortOrder(a);
+        const orderB = getSortOrder(b);
+        if (orderA !== orderB) return orderA - orderB;
+        try {
+          const dateA = new Date(a.startDate); const dateB = new Date(b.startDate);
+          if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
+          return dateB.getTime() - dateA.getTime(); // Descending date
+        } catch (e) { return 0; }
+      });
+    console.log(`Filtered contracts (${this.selectedSegment}):`, this.filteredContracts.length);
+    this.cdr.detectChanges();
+  }
+
+  /** Handles segment change event */
   onSegmentChange(event: any) {
     this.selectedSegment = event.detail.value;
-    // Save segment preference to localStorage
-    localStorage.setItem('contractSegment', this.selectedSegment);
-    // Update the filter subject
+    if (['active', 'pending', 'terminated'].includes(this.selectedSegment)) {
+      localStorage.setItem('contractSegment', this.selectedSegment);
+    }
     this.filterSubject.next(this.selectedSegment);
-    this.filterContracts();
+    this.filterAndSortContracts();
   }
 
+  /** Selects a contract and opens the modal */
   selectContract(contract: Contract) {
-    this.selectedContract = contract;
-    if (!contract.signed) {
-      setTimeout(() => {
-        this.initializeSignaturePad();
-      }, 300);
+    this.selectedContract = { ...contract };
+    this.cdr.detectChanges();
+    if (this.selectedContract.status === 'active' && !this.selectedContract.signed) {
+      setTimeout(() => { this.initializeSignaturePad(); }, 150);
     }
   }
 
+  /** Closes the modal and cleans up signature pad */
+  closeModal() {
+    this.selectedContract = null;
+    this.signaturePad?.clear();
+    this.signaturePad = undefined;
+    this.cdr.detectChanges();
+  }
+
+  // --- Signature Pad Logic ---
   private initializeSignaturePad() {
     if (this.signatureCanvas && this.signatureCanvas.nativeElement) {
       const canvas = this.signatureCanvas.nativeElement;
-      const containerWidth = canvas.parentElement.offsetWidth;
-      canvas.width = containerWidth - 4;
-      canvas.height = 200;
-
-      this.signaturePad = new SignaturePad(canvas, {
-        backgroundColor: 'rgb(255, 255, 255)',
-        penColor: 'rgb(0, 0, 0)',
-        velocityFilterWeight: 0.7
-      });
-
-      this.signaturePad.addEventListener('beginStroke', () => {
-        canvas.classList.add('signing');
-      });
-
-      this.signaturePad.addEventListener('endStroke', () => {
-        canvas.classList.remove('signing');
-      });
-    }
+      const containerWidth = canvas.parentElement?.offsetWidth;
+      if (containerWidth && containerWidth > 0) {
+        canvas.width = containerWidth - 4;
+        canvas.height = 200;
+        console.log(`Initializing SignaturePad with dimensions: ${canvas.width}x${canvas.height}`);
+        this.signaturePad = new SignaturePad(canvas, {
+          backgroundColor: 'rgb(255, 255, 255)', penColor: 'rgb(0, 0, 0)', velocityFilterWeight: 0.7
+        });
+      } else { setTimeout(() => this.initializeSignaturePad(), 100); }
+    } else { setTimeout(() => this.initializeSignaturePad(), 100); }
   }
 
   clearSignature() {
-    if (this.signaturePad) {
-      this.signaturePad.clear();
-      const animation = this.animationController.create()
-        .addElement(this.signatureCanvas.nativeElement)
-        .duration(300)
-        .fromTo('opacity', '0.5', '1');
-      animation.play();
-    }
+    if (this.signaturePad) { this.signaturePad.clear(); }
   }
 
   isSignatureValid(): boolean {
     return this.signaturePad ? !this.signaturePad.isEmpty() : false;
   }
 
-  formatDate(dateString: string | Date): string {
-    if (!dateString) return '';
+  // --- Date Formatting ---
+  formatDate(dateInput: string | Date | Timestamp | undefined): string {
+    if (!dateInput) return 'N/A';
     try {
-      // Handle both ISO strings and Date objects
-      const date = dateString instanceof Date ? dateString : new Date(dateString);
-      return date.toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
+      let date: Date;
+      if (dateInput instanceof Timestamp) date = dateInput.toDate();
+      else if (dateInput instanceof Date) date = dateInput;
+      else date = new Date(dateInput);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
     } catch (e) {
-      return String(dateString);
+      console.error("Error formatting date:", dateInput, e); return 'Invalid Date';
     }
   }
 
+
+  // --- Contract Actions ---
+
+  /** Views the signed contract PDF from Storage */
   async viewSignedContract() {
-    if (!this.selectedContract?.signed) {
-      this.showAlert('Info', 'This contract is not yet signed.');
-      return;
-    }
+    if (!this.selectedContract?.signed) { this.showToast('This contract is not yet signed.', 'warning'); return; }
+    const storagePath = this.selectedContract.contractUrl;
+    if (!storagePath) { this.showAlert('Error', 'Signed contract document path not found.'); return; }
 
-    if (this.selectedContract.contractUrl) {
-      const loading = await this.loadingController.create({
-        message: 'Loading contract...',
-        spinner: 'circles'
-      });
-      await loading.present();
-
-      try {
-        const storagePath = this.getStoragePathFromUrl(this.selectedContract.contractUrl);
-        const pdfRef = ref(this.storage, storagePath);
-        const downloadUrl = await getDownloadURL(pdfRef);
-        window.open(downloadUrl, '_system');
-      } catch (error) {
-        console.error('Error viewing signed contract:', error);
-        this.showAlert('Error', 'Failed to load signed contract. Please try again later.');
-      } finally {
-        await loading.dismiss();
-      }
-    } else {
-      this.showAlert('Error', 'No signed contract found.');
-    }
-  }
-
-  private getStoragePathFromUrl(url: string): string {
-    try {
-      // Extract the storage path from the URL
-      const urlObj = new URL(url);
-      const path = urlObj.pathname.split('/o/')[1]?.split('?')[0];
-      if (!path) throw new Error('Invalid Firebase Storage URL');
-      return decodeURIComponent(path);
-    } catch (error) {
-      console.error('Error parsing storage URL:', error);
-      throw new Error('Invalid contract URL');
-    }
-  }
-
-
-  async signContract() {
-    if (!this.isSignatureValid() || !this.selectedContract) {
-      this.showAlert('Signature Required', 'Please provide your signature before signing the contract.');
-      return;
-    }
-
-    const confirmAlert = await this.alertController.create({
-      header: 'Confirm Signature',
-      message: 'By signing this contract, you agree to all terms and conditions. This action cannot be undone.',
-      buttons: [
-        { text: 'Cancel', role: 'cancel' },
-        {
-          text: 'Sign Contract',
-          cssClass: 'alert-button-confirm',
-          handler: () => this.processSignature()
-        }
-      ],
-      cssClass: 'contract-alert'
-    });
-
-    await confirmAlert.present();
-  }
-
-  async processSignature() {
-    const loading = await this.loadingController.create({
-      message: 'Processing your signature...',
-      spinner: 'circles'
-    });
+    this.viewingPdf = true;
+    const loading = await this.loadingController.create({ message: 'Loading contract...' });
     await loading.present();
 
     try {
-      const user = this.auth.currentUser;
-      if (!user) throw new Error('No authenticated user found');
+      console.log(`viewSignedContract: Getting download URL for path: ${storagePath}`);
+      const pdfRef = ref(this.storage, storagePath);
+      const downloadUrl = await getDownloadURL(pdfRef);
+      console.log(`viewSignedContract: Opening URL: ${downloadUrl}`);
+      window.open(downloadUrl, '_system');
+    } catch (error) {
+      console.error('Error viewing signed contract:', error);
+      this.showToast('Failed to load signed contract. Please try again later.', 'danger');
+    } finally {
+      await loading.dismiss(); this.viewingPdf = false; this.cdr.detectChanges();
+    }
+  }
 
-      const employeeSignatureData = this.signaturePad!.toDataURL('image/png');
-      let path: string;
-      if (this.selectedContract?.contractUrl) {
-        path = this.getStoragePathFromUrl(this.selectedContract.contractUrl);
-      } else {
-        throw new Error('Contract URL is not defined');
-      }
-      const pdfRef = ref(this.storage, path);
+  /** Presents confirmation dialog before signing */
+  async signContract() {
+    if (!this.isSignatureValid() || !this.selectedContract) { this.showAlert('Signature Required', 'Please provide your signature.'); return; }
+    const confirmAlert = await this.alertController.create({
+      header: 'Confirm Signature',
+      message: 'Confirm you agree to the terms and wish to sign this contract.',
+      buttons: [
+        { text: 'Cancel', role: 'cancel' },
+        { text: 'Sign Contract', cssClass: 'alert-button-confirm', handler: () => this.processSignature() }
+      ]
+    });
+    await confirmAlert.present();
+  }
+
+  /** Processes signature, modifies PDF, uploads, and updates Firestore */
+  async processSignature() {
+    const currentUserMeta = this.currentUser; // Use stored metadata
+    if (!currentUserMeta?.businessId || !currentUserMeta?.uid) { this.showAlert('Error', 'Cannot sign contract. User business context is missing.'); return; }
+    if (!this.selectedContract || !this.selectedContract.id) { this.showAlert('Error', 'Cannot sign contract. No contract selected or contract ID missing.'); return; }
+    if (!this.signaturePad || this.signaturePad.isEmpty()) { this.showAlert('Error', 'Signature is missing or invalid.'); return; }
+    const storagePath = this.selectedContract.contractUrl; // Assumes relative, tenant-aware path
+    if (!storagePath) { this.showAlert('Error', 'Contract document path is missing. Cannot save signature.'); return; }
+
+    this.signingInProgress = true;
+    const loading = await this.loadingController.create({ message: 'Processing signature...' });
+    await loading.present();
+
+    try {
+      const signatureDataUrl = this.signaturePad.toDataURL('image/png');
+      const pdfRef = ref(this.storage, storagePath);
       const existingPdfBytes = await getBytes(pdfRef);
-
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
       const pages = pdfDoc.getPages();
+      if (pages.length === 0) throw new Error("PDF has no pages.");
       const firstPage = pages[0];
-      const signatureImageBytes = await this.dataURLtoArrayBuffer(employeeSignatureData);
+      const signatureImageBytes = await this.dataURLtoArrayBuffer(signatureDataUrl);
       const signatureImage = await pdfDoc.embedPng(signatureImageBytes);
-
-      const { height } = firstPage.getSize();
-      firstPage.drawImage(signatureImage, {
-        x: 400,
-        y: 400,
-        width: 100,
-        height: 120,
-      });
-
-      const today = new Date().toLocaleDateString();
-      firstPage.drawText(`Date: ${today}`, {
-        x: 400,
-        y: 400,
-        size: 10,
-      });
-
+      const { width: imgWidth, height: imgHeight } = signatureImage.scale(0.25);
+      const { width: pageWidth, height: pageHeight } = firstPage.getSize();
+      const signatureX = pageWidth - imgWidth - 50; const signatureY = 80;
+      firstPage.drawImage(signatureImage, { x: signatureX, y: signatureY, width: imgWidth, height: imgHeight });
+      const signDate = new Date();
+      firstPage.drawText(`Signed: ${signDate.toLocaleDateString()}`, { x: signatureX, y: signatureY - 15, size: 8 });
       const modifiedPdfBytes = await pdfDoc.save();
-      await uploadBytes(pdfRef, modifiedPdfBytes);
+      await uploadBytes(pdfRef, modifiedPdfBytes, { contentType: 'application/pdf' });
 
-      if (!this.selectedContract?.id) {
-        throw new Error('Contract ID is not defined');
-      }
-      const contractRef = doc(this.firestore, 'contracts', this.selectedContract.id);
-      await updateDoc(contractRef, {
+      // --- Update Firestore using TENANT-AWARE PATH ---
+      const contractDocPath = `business/${currentUserMeta.businessId}/contracts/${this.selectedContract.id}`;
+      console.log(`processSignature: Updating Firestore document at: ${contractDocPath}`);
+      const contractDocRef = doc(this.firestore, contractDocPath);
+      await updateDoc(contractDocRef, {
         signed: true,
-        signedAt: new Date(),
+        signedAt: Timestamp.fromDate(signDate), // Store as Timestamp
         status: 'active'
       });
 
-      // Update the local selectedContract immediately to update UI
-      if (this.selectedContract) {
-        this.selectedContract.signed = true;
-        this.selectedContract.signedAt = new Date();
-        this.selectedContract.status = 'active';
+      // --- Update local state ---
+      console.log(`processSignature: Updating local contract state.`);
+      const updatedContractData: Partial<Contract> = { signed: true, signedAt: signDate, status: 'active' };
+      this.selectedContract = { ...this.selectedContract, ...updatedContractData };
+      const index = this.allUserContracts.findIndex(c => c.id === this.selectedContract?.id);
+      if (index > -1) {
+        this.allUserContracts[index] = { ...this.allUserContracts[index], ...updatedContractData };
+        this.filterAndSortContracts(); // Re-filter/sort
       }
 
       await loading.dismiss();
-      this.showAlert('Success', 'Contract signed successfully!');
-    } catch (error) {
+      this.showToast('Contract signed successfully!', 'success');
+
+    } catch (error: any) {
       console.error('Error signing contract:', error);
       await loading.dismiss();
-      this.showAlert('Error', 'Failed to sign contract: ' + (error as any).message);
+      this.showToast('Failed to sign contract: ' + error.message, 'danger');
+    } finally {
+      this.signingInProgress = false;
+      this.cdr.detectChanges();
     }
   }
+
+  // --- Alert/Toast Helpers ---
   async showAlert(header: string, message: string) {
-    const alert = await this.alertController.create({
-      header,
-      message,
-      buttons: ['OK'],
-      cssClass: 'contract-alert'
-    });
+    const alert = await this.alertController.create({ header, message, buttons: ['OK'] });
     await alert.present();
   }
 
-  private async dataURLtoArrayBuffer(dataURL: string): Promise<Uint8Array> {
-    const response = await fetch(dataURL);
-    const blob = await response.blob();
-    return new Uint8Array(await blob.arrayBuffer());
+  async showToast(message: string, color: string = 'primary', duration: number = 3000) {
+    try {
+      const toast = await this.toastController.create({ message, duration, color, position: 'bottom' });
+      await toast.present();
+    } catch (e) { console.error("showToast error:", e); }
   }
+
+  // --- Data URL Helper ---
+  private async dataURLtoArrayBuffer(dataURL: string): Promise<Uint8Array> {
+    const response = await fetch(dataURL); const blob = await response.blob(); return new Uint8Array(await blob.arrayBuffer());
+  }
+
+  // --- UI Helper Functions ---
+  getBadgeColor(contract: Contract): string {
+    if (!contract) return 'medium';
+    if (contract.status === 'terminated' || contract.status === 'expired') return 'danger';
+    if (contract.signed) return 'success';
+    return 'warning'; // Pending
+  }
+
+  getStatusText(contract: Contract): string {
+    if (!contract) return 'Unknown';
+    if (contract.status === 'terminated' || contract.status === 'expired') return 'Terminated/Expired';
+    if (contract.signed) return 'Signed';
+    return 'Pending Signature';
+  }
+
+  getStatusClass(contract: Contract): string {
+    if (!contract) return 'unknown';
+    if (contract.status === 'terminated' || contract.status === 'expired') return 'terminated';
+    if (contract.signed) return 'signed';
+    return 'pending';
+  }
+
+  getStatusIcon(contract: Contract): string {
+    if (!contract) return 'help-circle-outline';
+    if (contract.status === 'terminated' || contract.status === 'expired') return 'close-circle';
+    if (contract.signed) return 'checkmark-circle';
+    return 'alert-circle';
+  }
+
 }
